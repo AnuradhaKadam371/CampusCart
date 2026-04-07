@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { getProducts, getProductById, createProduct, deleteProduct, getMyProducts } = require('../controllers/productController');
+
+const {
+    getProducts,
+    getProductById,
+    createProduct,
+    deleteProduct,
+    getMyProducts,
+    updateProduct          // ✅ added
+} = require('../controllers/productController');
+
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -16,17 +25,21 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
+    if (
+        file.mimetype === 'image/jpeg' ||
+        file.mimetype === 'image/png' ||
+        file.mimetype === 'image/jpg'
+    ) {
         cb(null, true);
     } else {
         cb(null, false);
     }
 };
 
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 1024 * 1024 * 5 // 5MB
+        fileSize: 1024 * 1024 * 5
     },
     fileFilter: fileFilter
 });
@@ -34,7 +47,13 @@ const upload = multer({
 router.get('/', getProducts);
 router.get('/myproducts', auth, getMyProducts);
 router.get('/:id', getProductById);
-router.post('/', [auth, upload.single('image')], createProduct);
+
+router.post('/', auth,upload.array("images", 5), createProduct);
+
+// ✅ update product (edit)
+router.put('/:id', auth, upload.array("images", 5), updateProduct);
+
+// delete product
 router.delete('/:id', auth, deleteProduct);
 
 module.exports = router;

@@ -2,7 +2,19 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const admin = require('../middleware/adminMiddleware');
-const { getAllUsers, getAllProducts, deleteUser, deleteProduct } = require('../controllers/adminController');
+const {
+  getDashboardStats,
+  getAllUsers,
+  getAllProducts,
+  getAllOrders,
+  blockUnblockUser,
+  deleteUser,
+  deleteProduct,
+  getReports,
+  updateReportStatus,
+} = require('../controllers/adminController');
+
+router.get('/stats', auth, admin, getDashboardStats);
 
 // @route   GET api/admin/users
 // @desc    Get all users
@@ -14,6 +26,10 @@ router.get('/users', auth, admin, getAllUsers);
 // @access  Private/Admin
 router.get('/products', auth, admin, getAllProducts);
 
+router.get('/orders', auth, admin, getAllOrders);
+
+router.put('/users/:id/block-toggle', auth, admin, blockUnblockUser);
+
 // @route   DELETE api/admin/users/:id
 // @desc    Delete user and their products
 // @access  Private/Admin
@@ -23,5 +39,8 @@ router.delete('/users/:id', auth, admin, deleteUser);
 // @desc    Delete product
 // @access  Private/Admin
 router.delete('/products/:id', auth, admin, deleteProduct);
+
+router.get('/reports', auth, admin, getReports);
+router.put('/reports/:id', auth, admin, updateReportStatus);
 
 module.exports = router;

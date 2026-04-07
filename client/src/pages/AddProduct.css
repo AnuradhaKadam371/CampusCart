@@ -1,0 +1,293 @@
+/* ===============================
+   Page Layout
+================================ */
+
+.sell-page {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===============================
+   Background Gradient + Shapes
+================================ */
+
+.sell-page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+}
+
+.bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+}
+
+.bg-shape-1 {
+  width: 300px;
+  height: 300px;
+  background: #6366f1;
+  top: -80px;
+  right: -80px;
+}
+
+.bg-shape-2 {
+  width: 260px;
+  height: 260px;
+  background: #a78bfa;
+  bottom: 10%;
+  left: -60px;
+}
+
+.bg-shape-3 {
+  width: 240px;
+  height: 240px;
+  background: #60a5fa;
+  bottom: -60px;
+  right: 20%;
+}
+
+.bg-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), #f8fafc);
+}
+
+/* ===============================
+   Container
+================================ */
+
+.sell-page-container {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* ===============================
+   Back Button
+================================ */
+
+.sell-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.sell-back-link:hover {
+  color: #4f46e5;
+}
+
+/* ===============================
+   Header
+================================ */
+
+.sell-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.page-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.page-subtitle {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* ===============================
+   Form Card
+================================ */
+
+.form-card {
+  background: white;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* ===============================
+   Section Titles
+================================ */
+
+.form-section {
+  margin-bottom: 25px;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===============================
+   Upload Box
+================================ */
+
+.image-upload-box {
+  border: 2px dashed #c7d2fe;
+  border-radius: 14px;
+  padding: 35px;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.image-upload-box:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+}
+
+.upload-icon-placeholder {
+  font-size: 40px;
+  color: #6366f1;
+}
+
+/* ===============================
+   Image Preview
+================================ */
+
+.preview-container {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.preview-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+/* ===============================
+   Inputs
+================================ */
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: block;
+  color: #334155;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  transition: 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+}
+
+/* ===============================
+   Row Layout (Price + Location)
+================================ */
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+/* ===============================
+   Price Prefix
+================================ */
+
+.price-input-wrapper {
+  position: relative;
+}
+
+.price-prefix {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.price-input-wrapper input {
+  padding-left: 25px;
+}
+
+/* ===============================
+   Button
+================================ */
+
+.action-buttons {
+  margin-top: 20px;
+}
+
+.post-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.post-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(79,70,229,0.3);
+}
+
+/* ===============================
+   Responsive
+================================ */
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-card {
+    padding: 20px;
+  }
+}

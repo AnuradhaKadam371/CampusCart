@@ -1,0 +1,27 @@
+.wishlist-page h2 {
+    color: #333;
+}
+
+.wishlist-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.wishlist-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+.wishlist-card .card-img-wrap {
+    background: #f8f9fa;
+}
+
+.wishlist-card .card-img-top {
+    object-fit: contain !important;
+    background: #f8f9fa;
+}
+
+.empty-wishlist i {
+    opacity: 0.6;
+}

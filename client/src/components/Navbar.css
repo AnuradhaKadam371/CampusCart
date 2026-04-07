@@ -1,0 +1,18 @@
+/* CampusCart text + icon – shifted left */
+.custom-brand {
+  color: rgb(25, 25, 210) !important;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  text-decoration: none;
+  margin-right: 0;
+  padding-left: 0;
+  margin-left: -8px;
+}
+
+/* .custom-brand i {
+  color: #0d6efd;
+  background-color: #e0f0ff;
+  padding: 5px;
+  border-radius: 5px;
+} */
