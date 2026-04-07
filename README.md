@@ -1,134 +1,151 @@
-# CampusCart 🎓
+# 🚀 CampusCart – Student Marketplace Platform
 
-CampusCart is a full-stack MERN (MongoDB, Express, React, Node.js) web application designed exclusively for university students to buy, sell, and trade used academic materials and essentials within their campus community. It provides a secure and user-friendly platform for students to monetize their unused items like calculators, notes, books, and project components, while helping others find affordable resources.
+CampusCart is a full-stack **MERN web application** built to enable university students to **buy, sell, and exchange academic and daily-use items** within their campus ecosystem.
 
-![CampusCart Hero](client/public/vite.svg) *Note: Replace with actual screenshot if available*
+It focuses on **affordability, trust, and simplicity**, helping students monetize unused items while making essential resources accessible at lower costs.
 
-## 🚀 Features
+---
 
-### for Students (Users)
-- **Secure Authentication**: Robust signup and login system using JWT (JSON Web Tokens) with password hashing.
-- **Marketplace Browsing**: intuitive search and filter options to find specific items by name or category (e.g., Books, Notes, Electronics).
-- **Product Listing**: Easily list items for sale with detailed descriptions, pricing, categories, and image uploads.
-- **User Dashboard**: A personal profile page to manage your active listings and view your contact details.
-- **Direct Communication**: View seller contact information (email/phone) to arrange purchases directly on campus.
-- **Responsive Design**: Fully responsive UI built with React Bootstrap, accessible on desktops, tablets, and mobile devices.
+## ✨ Key Highlights
 
-### for Administrators
-- **Dedicated Admin Panel**: Secure dashboard accessible only to authorized admin users.
-- **User Management**: View all registered students, their contact details, and activity statistics.
-- **Content Moderation**: Ability to delete inappropriate users or listings to maintain community standards.
-- **Platform Insights**: visualize total users, active listings, and platform growth at a glance.
+- 🎓 Campus-focused marketplace  
+- 🔐 Secure JWT-based authentication  
+- 💬 Real-time chat between buyers & sellers  
+- 📦 Smooth product listing & management  
+- 📊 Admin dashboard for moderation  
+- 📱 Fully responsive UI  
 
-## 🛠️ Technology Stack
+---
 
-- **Frontend**: 
-  - **React.js (Vite)**: For a fast, interactive user interface.
-  - **React Bootstrap**: For responsive, modern styling and components.
-  - **CSS3 (Custom)**: Glassmorphism effects, dynamic gradients, and polished aesthetics.
+## 🧩 Core Features
 
-- **Backend**: 
-  - **Node.js**: Robust JavaScript runtime environment.
-  - **Express.js**: Fast, unopinionated web framework for building APIs.
+### 👤 Student Features
 
-- **Database**: 
-  - **MongoDB**: NoSQL database for flexible data storage.
-  - **Mongoose**: ODM library for MongoDB and Node.js.
+- Register & login with secure authentication  
+- Browse products by category (Books, Electronics, Hostel, etc.)  
+- Add, edit, and manage product listings  
+- View product details with images  
+- Chat with sellers/buyers  
+- Track orders and requests  
+- Wishlist functionality  
 
-- **Security & Utilities**:
-  - **JWT (JSON Web Tokens)**: For secure, stateless authentication.
-  - **Bcryptjs**: For password encryption.
-  - **Multer**: user uploading middleware for handling product images.
+---
 
-## 📂 Project Structure
+### 🛒 Seller Features
+
+- Upload products with images and details  
+- Manage listings (active / sold)  
+- Accept or reject buyer requests  
+- Add pickup details with time selection  
+- Automatic email notifications on order confirmation  
+
+---
+
+### 🛡️ Admin Features
+
+- Admin-only dashboard  
+- Manage users and listings  
+- Remove inappropriate content  
+- Monitor platform activity  
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- React.js (Vite)  
+- React Router  
+- Context API  
+- Custom CSS + Responsive Design  
+
+---
+
+### Backend
+
+- Node.js  
+- Express.js  
+
+---
+
+### Database
+
+- MongoDB  
+- Mongoose  
+
+---
+
+### Other Tools
+
+- JWT Authentication  
+- Bcrypt (Password Hashing)  
+- Multer (Image Uploads)  
+- Nodemailer (Email Service)  
+- Socket.io (Chat System)  
+
+---
+
+## 📁 Project Structure
 
 ```bash
 CampusCart/
-├── client/                 # React Frontend
-│   ├── public/             # Static assets
-│   ├── src/
-│   │   ├── components/     # Reusable UI components (Navbar, PrivateRoute)
-│   │   ├── context/        # React Context API for Global State (Auth)
-│   │   ├── pages/          # Application Views (Home, Login, Dashboard)
-│   │   ├── utils/          # Helper functions and API configuration
-│   │   ├── App.jsx         # Main Application Component
-│   │   └── index.css       # Global Styles & Design System
-│   └── vite.config.js      # Vite Configuration
 │
-└── server/                 # Node.js Backend
-    ├── config/             # Database connection logic
-    ├── controllers/        # Request logic for Auth, Products, and Admin
-    ├── middleware/         # Auth verification and Role-based access control
-    ├── models/             # Mongoose Schemas (User, Product)
-    ├── routes/             # API Endpoints
-    ├── uploads/            # Storage for uploaded product images
-    ├── index.js            # Server entry point
-    └── seeder.js           # Script to populate database with dummy data
-```
+├── client/                # Frontend (React)
+│   ├── components/
+│   ├── pages/
+│   ├── context/
+│   ├── utils/
+│   └── App.jsx
+│
+├── server/                # Backend (Node + Express)
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   └── index.js
 
-## ⚙️ Setup & Installation
+## ⚙️ Installation & Setup
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (Local or Atlas)
-
-### 1. Clone the Repository
+**1️⃣ Clone Repository**
 ```bash
-git clone https://github.com/yourusername/campuscart.git
-cd CampusCart
+git clone https://github.com/<your-username>/campuscart.git
+cd campuscart
 ```
 
-### 2. Backend Setup
-Navigate to the server directory and install dependencies:
+**2️⃣ Backend Setup**
 ```bash
 cd server
 npm install
 ```
 
-Create a `.env` file in the `server` directory with the following variables:
+**Create a `.env` file:**
 ```env
 PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
+MONGO_URI=your_mongodb_uri
+JWT_SECRET=your_secret_key
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_password
 ```
 
-### 3. Frontend Setup
-Open a new terminal, navigate to the client directory, and install dependencies:
+**3️⃣ Frontend Setup**
 ```bash
 cd client
 npm install
+npm run dev
 ```
 
-### 4. Database Seeding (Optional)
-To populate the database with dummy users and products (including a default Admin account):
-```bash
-cd server
-node seeder.js
-```
-*Default Admin Credentials:* `admin@campuscart.com` / `admin@123`
-
-### 5. Running the Application
-You need to run both the backend and frontend servers.
-
-**Backend Terminal:**
+**4️⃣ Run Backend**
 ```bash
 cd server
 npm start
 ```
 
-**Frontend Terminal:**
+**5️⃣ Open Application**
 ```bash
-cd client
-npm run dev
+http://localhost:5173
 ```
 
-Open your browser and navigate to `http://localhost:5173`.
-
-## 🛡️ Admin Access
-To access the Admin Panel:
-1. Log in with the admin credentials (`admin@campuscart.com` / `admin@123`).
-2. Click on the **"Admin Panel"** link in the navigation bar.
-3. Use the dashboard to manage users and products.
-
 ---
-*Built with ❤️ for Students.*
+
+## ❤️ Built for Students, by Students.
