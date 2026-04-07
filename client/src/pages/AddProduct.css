@@ -168,6 +168,24 @@
   color: #6366f1;
 }
 
+.upload-text-main {
+  font-weight: 600;
+  color: #334155;
+  font-size: 15px;
+}
+
+.upload-text-sub {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.form-section-desc {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  margin-top: -8px;
+}
+
 /* ===============================
    Image Preview
 ================================ */

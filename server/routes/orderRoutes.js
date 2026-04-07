@@ -9,6 +9,40 @@ const sendEmail = require("../utils/sendEmail");
 
 
 // ======================================================
+// 📋 GET SINGLE ORDER (for AcceptRequest auto-fill)
+// ======================================================
+router.get("/single/:id", authMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("buyerId", "name email avatar")
+      .populate("sellerId", "name email avatar");
+
+    if (!order) {
+      return res.status(404).json({ msg: "Order not found" });
+    }
+
+    // Only seller or buyer can view
+    const userId = String(req.user.id);
+    if (String(order.sellerId._id || order.sellerId) !== userId &&
+        String(order.buyerId._id || order.buyerId) !== userId) {
+      return res.status(401).json({ msg: "Not authorized" });
+    }
+
+    // Fetch product's pickupLocation
+    let productPickupLocation = "";
+    if (order.productId) {
+      const product = await Product.findById(order.productId).select("pickupLocation");
+      productPickupLocation = product?.pickupLocation || "";
+    }
+
+    res.json({ ...order.toObject(), productPickupLocation });
+  } catch (error) {
+    console.error("Get Single Order Error:", error);
+    res.status(500).json({ msg: "Server Error" });
+  }
+});
+
+// ======================================================
 // 🛒 CREATE ORDER (Buyer sends request)
 // ======================================================
 router.post("/create", authMiddleware, async (req, res) => {
@@ -88,6 +122,7 @@ router.get("/my-all-requests", authMiddleware, async (req, res) => {
   try {
     const orders = await Order.find({
       buyerId: req.user.id,
+      status: { $ne: "withdrawn" },
     })
       .populate("sellerId", "name email avatar")
       .sort({ createdAt: -1 });
@@ -429,7 +464,9 @@ router.delete("/withdraw/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ msg: "Order not found" });
     }
 
-    await Order.findByIdAndDelete(order._id);
+    // Soft-delete: set status to withdrawn (preserves chat access)
+    order.status = "withdrawn";
+    await order.save();
 
     res.json({ msg: "Order withdrawn successfully" });
 

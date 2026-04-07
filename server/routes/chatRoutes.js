@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const auth = require("../middleware/auth");
 const Message = require("../models/Message");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const User = require("../models/User");
 
 async function assertChatAccess({ productId, userId }) {
   const product = await Product.findById(productId).select("sellerId");
@@ -64,6 +66,85 @@ router.get("/history/:productId", auth, async (req, res) => {
   } catch (err) {
     const status = err.status || 500;
     res.status(status).json({ msg: err.message || "Server Error" });
+  }
+});
+
+// ======================================================
+// 📋 GET ALL CONVERSATIONS for logged-in user
+// ======================================================
+router.get("/conversations", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find all unique (productId, otherUserId) pairs
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { senderId: new mongoose.Types.ObjectId(userId) },
+            { receiverId: new mongoose.Types.ObjectId(userId) },
+          ],
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: {
+            productId: "$productId",
+            otherUserId: {
+              $cond: {
+                if: { $eq: ["$senderId", new mongoose.Types.ObjectId(userId)] },
+                then: "$receiverId",
+                else: "$senderId",
+              },
+            },
+          },
+          lastMessage: { $first: "$message" },
+          lastAt: { $first: "$createdAt" },
+        },
+      },
+      { $sort: { lastAt: -1 } },
+      { $limit: 100 },
+    ]);
+
+    // Enrich with product title + peer info
+    const conversations = await Promise.all(
+      messages.map(async (m) => {
+        const productId = String(m._id.productId);
+        const otherUserId = String(m._id.otherUserId);
+
+        let productTitle = "Product";
+        try {
+          const product = await Product.findById(productId).select("title");
+          if (product) productTitle = product.title;
+        } catch (_) {}
+
+        let peerName = "User";
+        let peerAvatar = null;
+        try {
+          const peer = await User.findById(otherUserId).select("name avatar");
+          if (peer) {
+            peerName = peer.name || "User";
+            peerAvatar = peer.avatar || null;
+          }
+        } catch (_) {}
+
+        return {
+          productId,
+          otherUserId,
+          productTitle,
+          peerName,
+          peerAvatar,
+          lastMessage: m.lastMessage || "",
+          lastAt: m.lastAt,
+        };
+      })
+    );
+
+    res.json({ conversations });
+  } catch (err) {
+    console.error("Conversations Error:", err);
+    res.status(500).json({ msg: "Server Error" });
   }
 });
 

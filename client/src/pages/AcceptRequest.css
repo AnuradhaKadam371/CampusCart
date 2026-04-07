@@ -1,0 +1,242 @@
+/* ============================
+   Accept Request — Card
+   ============================ */
+.accept-card {
+  border-radius: 16px !important;
+  border: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.accept-card:hover {
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* ============================
+   Splash Overlay
+   ============================ */
+.accept-splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  animation: splashFadeIn 0.5s ease forwards;
+}
+
+@keyframes splashFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.accept-splash-content {
+  text-align: center;
+  padding: 48px 32px;
+  max-width: 420px;
+  animation: splashContentPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+@keyframes splashContentPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ============================
+   Checkmark Animation
+   ============================ */
+.accept-splash-check {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+}
+
+.accept-splash-checkmark {
+  width: 100%;
+  height: 100%;
+}
+
+.accept-splash-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: #22c55e;
+  animation: splashCircleDraw 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.3s forwards;
+}
+
+@keyframes splashCircleDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+.accept-splash-tick {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: #22c55e;
+  animation: splashTickDraw 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes splashTickDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ============================
+   Splash Text & Button
+   ============================ */
+.accept-splash-title {
+  color: #f1f5f9;
+  font-weight: 800;
+  font-size: 2rem;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.accept-splash-subtitle {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.accept-splash-btn {
+  padding: 12px 40px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  animation: splashBtnAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accept-splash-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45);
+}
+
+@keyframes splashBtnAppear {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================
+   Splash Loading Dots
+   ============================ */
+.accept-splash-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.accept-splash-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #64748b;
+  animation: splashDotPulse 1.4s infinite ease-in-out;
+}
+
+.accept-splash-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.accept-splash-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes splashDotPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* ============================
+   Custom AM/PM Time Picker
+   ============================ */
+.accept-time-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.accept-time-select {
+  width: 90px !important;
+  flex: 0 0 auto;
+  border-radius: 10px !important;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  padding: 10px 8px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accept-time-select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+.accept-time-colon {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1;
+}
+
+.accept-ampm-toggle {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid #e2e8f0;
+  margin-left: 4px;
+}
+
+.accept-ampm-btn {
+  border: none;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.accept-ampm-btn:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.accept-ampm-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.accept-ampm-btn:hover:not(.active) {
+  background: #e2e8f0;
+  color: #334155;
+}

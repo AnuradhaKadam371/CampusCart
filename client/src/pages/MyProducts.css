@@ -1,3 +1,6 @@
+/* ============================
+   Main Tab Bar
+   ============================ */
 .mp-main-tabs {
     display: flex;
     width: 100%;
@@ -17,6 +20,7 @@
     padding: 10px 12px;
     border-radius: 10px;
     transition: background 0.22s ease, color 0.22s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
 
 .mp-tab:hover {
@@ -34,6 +38,72 @@
     transform: scale(0.98);
 }
 
+/* ============================
+   Section Headers
+   ============================ */
+.mp-section-header {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+    border-left: 4px solid #3b82f6;
+    border-radius: 10px;
+    letter-spacing: -0.01em;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.06);
+}
+
+.mp-section-header i {
+    font-size: 1.1rem;
+    color: #3b82f6;
+}
+
+/* ============================
+   Listings Sub-Tabs
+   ============================ */
+.mp-listings-subtabs {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.mp-listings-subtab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 9px 16px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.mp-listings-subtab:hover {
+    background: #fff;
+    color: #334155;
+}
+
+.mp-listings-subtab.active {
+    background: #fff;
+    color: #0d6efd;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.12);
+}
+
+/* ============================
+   Sub-nav (Back + Tabs)
+   ============================ */
 .mp-subnav {
     display: flex;
     align-items: stretch;
@@ -50,6 +120,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
     box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
@@ -57,8 +128,12 @@
 .mp-back-btn:hover {
     background: #e2e8f0;
     color: #0d6efd;
+    transform: translateX(-2px);
 }
 
+/* ============================
+   Cards
+   ============================ */
 .mp-card {
     border-radius: 14px !important;
     border: none;
@@ -67,23 +142,30 @@
 
 .mp-card:hover {
     box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1) !important;
+    transform: translateY(-3px);
 }
 
+/* ============================
+   Profile / Sold Badges
+   ============================ */
 .profile-sold-badge {
     position: absolute;
     top: 12px;
     left: 12px;
-    background: #dc3545;
+    background: linear-gradient(135deg, #dc3545, #c82333);
     color: #fff;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 8px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 700;
+    letter-spacing: 0.05em;
+    z-index: 2;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
 .profile-product-card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
 }
 
@@ -95,4 +177,30 @@
 .profile-product-card .card-img-top {
     object-fit: contain !important;
     background: #f8f9fa;
+}
+
+/* ============================
+   General Improvements
+   ============================ */
+.profile-page .card-title {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.profile-page .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.profile-page .btn-sm {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 6px 14px;
+    transition: all 0.2s ease;
+}
+
+.profile-page .btn-sm:hover {
+    transform: translateY(-1px);
 }

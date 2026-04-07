@@ -56,6 +56,7 @@ const MyProductsDashboard = () => {
   const [loadingListings, setLoadingListings] = useState(true);
 
   const [panel, setPanel] = useState("main"); // main | buyer | seller
+  const [listingsSubTab, setListingsSubTab] = useState("available"); // available | sold
   const [buyerInnerTab, setBuyerInnerTab] = useState("requests"); // requests | purchases
   const [buyerTab, setBuyerTab] = useState("pending"); // pending | accepted | rejected
   const [sellerSubTab, setSellerSubTab] = useState("incoming"); // incoming | upcoming | completed
@@ -434,7 +435,8 @@ const MyProductsDashboard = () => {
   const enterBuyer = () => {
     setPanel("buyer");
     setBuyerInnerTab("requests");
-    setBuyerSubview("hub");
+    setBuyerSubview("requests");
+    setBuyerTab("pending");
   };
 
   const enterSeller = () => {
@@ -473,53 +475,101 @@ const MyProductsDashboard = () => {
 
       {/* ================= MY LISTINGS ================= */}
       {panel === "main" && (
-        <Row xs={1} md={2} lg={3} className="g-4">
-          {products.length === 0 ? (
-            <Col>
-              <Alert variant="light">No listings yet.</Alert>
-            </Col>
-          ) : (
-            products.map((product) => (
-              <Col key={product._id}>
-                <Card className="h-100 shadow-sm position-relative profile-product-card mp-card">
-                  {product.status === "sold" && <div className="profile-sold-badge">SOLD</div>}
-                  <Card.Img
-                    variant="top"
-                    src={getImageUrl(product.images?.[0], { placeholderSize: 600 })}
-                    style={{ height: 200, objectFit: "contain", background: "#f8f9fa" }}
-                  />
-                  <Card.Body>
-                    <Badge bg="light" text="dark">{product.category}</Badge>
-                    <Card.Title className="mt-2 mb-1">{product.title}</Card.Title>
-                    <div className="text-primary fw-bold">₹{product.price}</div>
-                    <div className="small text-muted mt-2" title={product.description}>
-                      {product.description}
-                    </div>
-                    <div className="d-flex gap-2 mt-3">
-                      <Link to={`/edit-product/${product._id}`} className="w-100">
-                        <Button variant="outline-primary" size="sm" className="w-100">Edit</Button>
-                      </Link>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        className="w-100"
-                        disabled={deletingId === product._id}
-                        onClick={() => deleteProduct(product._id)}
-                      >
-                        {deletingId === product._id ? "Deleting…" : "Delete"}
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
+        <>
+          {/* Listings Sub-Tabs: Available / Sold */}
+          <div className="mp-listings-subtabs mb-3">
+            <button
+              type="button"
+              className={`mp-listings-subtab ${listingsSubTab === "available" ? "active" : ""}`}
+              onClick={() => setListingsSubTab("available")}
+            >
+              Available Products
+              <Badge bg="success" className="ms-2">
+                {products.filter((p) => p.status !== "sold").length}
+              </Badge>
+            </button>
+            <button
+              type="button"
+              className={`mp-listings-subtab ${listingsSubTab === "sold" ? "active" : ""}`}
+              onClick={() => setListingsSubTab("sold")}
+            >
+              Sold Products
+              <Badge bg="secondary" className="ms-2">
+                {products.filter((p) => p.status === "sold").length}
+              </Badge>
+            </button>
+          </div>
+
+          <Row xs={1} md={2} lg={3} className="g-4">
+            {products
+              .filter((p) =>
+                listingsSubTab === "available"
+                  ? p.status !== "sold"
+                  : p.status === "sold"
+              )
+              .length === 0 ? (
+              <Col>
+                <Alert variant="light">
+                  {listingsSubTab === "available"
+                    ? "No available listings."
+                    : "No sold items yet."}
+                </Alert>
               </Col>
-            ))
-          )}
-        </Row>
+            ) : (
+              products
+                .filter((p) =>
+                  listingsSubTab === "available"
+                    ? p.status !== "sold"
+                    : p.status === "sold"
+                )
+                .map((product) => (
+                  <Col key={product._id}>
+                    <Card className="h-100 shadow-sm position-relative profile-product-card mp-card">
+                      {product.status === "sold" && <div className="profile-sold-badge">SOLD</div>}
+                      <Card.Img
+                        variant="top"
+                        src={getImageUrl(product.images?.[0], { placeholderSize: 600 })}
+                        style={{ height: 200, objectFit: "contain", background: "#f8f9fa" }}
+                      />
+                      <Card.Body>
+                        <Badge bg="light" text="dark">{product.category}</Badge>
+                        <Card.Title className="mt-2 mb-1">{product.title}</Card.Title>
+                        <div className="text-primary fw-bold">₹{product.price}</div>
+                        <div className="small text-muted mt-2" title={product.description}>
+                          {product.description}
+                        </div>
+                        {product.status !== "sold" && (
+                        <div className="d-flex gap-2 mt-3">
+                          <Link to={`/edit-product/${product._id}`} className="w-100">
+                            <Button variant="outline-primary" size="sm" className="w-100">Edit</Button>
+                          </Link>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            className="w-100"
+                            disabled={deletingId === product._id}
+                            onClick={() => deleteProduct(product._id)}
+                          >
+                            {deletingId === product._id ? "Deleting…" : "Delete"}
+                          </Button>
+                        </div>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))
+            )}
+          </Row>
+        </>
       )}
 
       {/* ================= BUYER ================= */}
       {panel === "buyer" && (
         <>
+          <div className="mp-section-header">
+            <i className="fa-solid fa-bag-shopping me-2"></i>
+            Buyer Section
+          </div>
           {buyerSubview === "hub" && (
             <div className="mp-subnav mb-3">
               <button type="button" className="mp-back-btn" onClick={goMain} aria-label="Back">
@@ -726,6 +776,10 @@ const MyProductsDashboard = () => {
       {/* ================= SELLER ================= */}
       {panel === "seller" && (
         <>
+          <div className="mp-section-header">
+            <i className="fa-solid fa-store me-2"></i>
+            Seller Section
+          </div>
           <div className="mp-subnav mb-3">
             <button type="button" className="mp-back-btn" onClick={goMain} aria-label="Back">
               <i className="fa-solid fa-arrow-left" />

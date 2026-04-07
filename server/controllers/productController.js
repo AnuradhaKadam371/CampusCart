@@ -7,6 +7,9 @@ exports.getProducts = async (req, res) => {
         const { search, category } = req.query;
         let query = {};
 
+        // Only show available (not sold) products in the marketplace
+        query.status = { $ne: 'sold' };
+
         if (search) {
             query.title = { $regex: search, $options: 'i' };
         }

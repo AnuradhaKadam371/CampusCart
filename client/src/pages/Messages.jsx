@@ -1,18 +1,18 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Badge, Image } from "react-bootstrap";
+import { Badge, Image, Spinner } from "react-bootstrap";
 import { ChatConversation } from "./Chat";
 import { AuthContext } from "../context/AuthContext";
-import { getStoredConversations, getUnreadCount } from "../utils/chatConversations";
-import { resolveChatPeer } from "../utils/resolveChatPeer";
+import { getUnreadCount } from "../utils/chatConversations";
 import { getImageUrl } from "../utils/imageUrl";
+import api from "../utils/api";
 import "./Messages.css";
 
 const Messages = () => {
   const { user } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [list, setList] = useState(() => getStoredConversations());
-  const [peerByKey, setPeerByKey] = useState({});
+  const [list, setList] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
 
   const myId = user?._id || user?.id;
 
@@ -22,37 +22,46 @@ const Messages = () => {
   const selectedKey =
     productIdFromUrl && otherUserIdFromUrl ? `${String(productIdFromUrl)}:${String(otherUserIdFromUrl)}` : null;
 
+  // Fetch server-verified conversation list
   useEffect(() => {
-    const refresh = () => setList(getStoredConversations());
+    if (!myId) return;
+    let cancelled = false;
+
+    const fetchConversations = async () => {
+      try {
+        setLoadingList(true);
+        const res = await api.get("/chat/conversations");
+        const serverConvos = (res.data?.conversations || []).map((c) => ({
+          key: `${c.productId}:${c.otherUserId}`,
+          productId: c.productId,
+          otherUserId: c.otherUserId,
+          productTitle: c.productTitle || "Product",
+          peerName: c.peerName || "User",
+          peerAvatar: c.peerAvatar || null,
+          lastMessage: c.lastMessage || "",
+          updatedAt: c.lastAt ? new Date(c.lastAt).getTime() : 0,
+        }));
+        if (!cancelled) setList(serverConvos);
+      } catch (err) {
+        console.error("Failed to fetch conversations:", err);
+      } finally {
+        if (!cancelled) setLoadingList(false);
+      }
+    };
+
+    fetchConversations();
+
+    // Refresh when chat updates happen
+    const refresh = () => fetchConversations();
     window.addEventListener("chatConversationsUpdated", refresh);
     window.addEventListener("chatUnreadUpdated", refresh);
+
     return () => {
+      cancelled = true;
       window.removeEventListener("chatConversationsUpdated", refresh);
       window.removeEventListener("chatUnreadUpdated", refresh);
     };
-  }, []);
-
-  useEffect(() => {
-    if (!myId || !list.length) return;
-    let cancelled = false;
-    (async () => {
-      const pairs = await Promise.all(
-        list.map(async (c) => {
-          const r = await resolveChatPeer(c.productId, c.otherUserId, myId);
-          return [c.key, r];
-        })
-      );
-      if (cancelled) return;
-      const next = {};
-      pairs.forEach(([k, r]) => {
-        next[k] = r;
-      });
-      setPeerByKey((prev) => ({ ...prev, ...next }));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [list, myId]);
+  }, [myId]);
 
   const selected = useMemo(() => {
     if (!selectedKey) return null;
@@ -67,25 +76,6 @@ const Messages = () => {
     };
   }, [list, selectedKey, productIdFromUrl, otherUserIdFromUrl, searchParams]);
 
-  useEffect(() => {
-    if (!myId || !selectedKey) return;
-    let cancelled = false;
-    (async () => {
-      const [pid, oid] = selectedKey.split(":");
-      if (!pid || !oid) return;
-      const r = await resolveChatPeer(pid, oid, myId);
-      if (!cancelled && (r.name || r.avatar)) {
-        setPeerByKey((prev) => {
-          if (prev[selectedKey]?.name) return prev;
-          return { ...prev, [selectedKey]: r };
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedKey, myId]);
-
   const selectConversation = (c) => {
     const next = new URLSearchParams();
     next.set("productId", c.productId);
@@ -95,17 +85,9 @@ const Messages = () => {
     setSearchParams(next);
   };
 
-  const peerFor = (c) => {
-    const r = peerByKey[c.key];
-    const name = r?.name || c.peerName;
-    const avatar = r?.avatar || null;
-    return {
-      name: name && String(name).trim() ? name : null,
-      avatar,
-    };
-  };
-
-  const selectedPeer = selected ? peerFor(selected) : null;
+  const selectedPeer = selected
+    ? { name: selected.peerName || null, avatar: selected.peerAvatar || null }
+    : null;
 
   return (
     <div className="messages-page py-4">
@@ -116,14 +98,17 @@ const Messages = () => {
               <h5 className="mb-0">Messages</h5>
             </div>
             <div className="messages-list">
-              {list.length === 0 ? (
+              {loadingList ? (
+                <div className="text-center p-4">
+                  <Spinner animation="border" size="sm" />
+                </div>
+              ) : list.length === 0 ? (
                 <div className="text-muted small p-3">No conversations yet. Open a chat from a product or order.</div>
               ) : (
                 list.map((c) => {
                   const unread = getUnreadCount(c.key);
                   const active = selectedKey === c.key;
-                  const { name, avatar } = peerFor(c);
-                  const displayName = name || "User";
+                  const displayName = c.peerName || "User";
                   return (
                     <button
                       key={c.key}
@@ -132,9 +117,9 @@ const Messages = () => {
                       onClick={() => selectConversation(c)}
                     >
                       <div className="messages-thread-row">
-                        {avatar ? (
+                        {c.peerAvatar ? (
                           <Image
-                            src={getImageUrl(avatar, { placeholderSize: 80 })}
+                            src={getImageUrl(c.peerAvatar, { placeholderSize: 80 })}
                             roundedCircle
                             className="messages-thread-avatar"
                             alt=""

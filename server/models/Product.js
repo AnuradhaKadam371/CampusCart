@@ -4,23 +4,34 @@ const ProductSchema = new mongoose.Schema({
 
     title: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
 
     description: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
 
     price: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
 
     category: {
         type: String,
         required: true,
-        enum: ['Calculator','Notes','Books','Projects','Hardware','Other']
+        enum: [
+            'Books',
+            'Electronics',
+            'Hostel',
+            'Clothing',
+            'Lab',
+            'Sports',
+            'Others'   // ✅ Fixed (matches your new system)
+        ]
     },
 
     images: [
@@ -31,11 +42,15 @@ const ProductSchema = new mongoose.Schema({
     ],
 
     pickupLocation: {
-        type: String
+        type: String,
+        trim: true
     },
 
+    // ❌ You said you DON'T want this anymore
+    // so keeping optional (or you can remove completely)
     contactPreference: {
-        type: String
+        type: String,
+        default: ''
     },
 
     sellerId: {
@@ -46,7 +61,7 @@ const ProductSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['available','sold'],
+        enum: ['available', 'sold'],
         default: 'available'
     },
 

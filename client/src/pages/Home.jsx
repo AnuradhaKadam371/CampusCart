@@ -24,12 +24,13 @@ const PRODUCTS_INITIAL = 4;
 
 const categories = [
     { name: 'All', icon: 'fa-th-large' },
-    { name: 'Calculator', icon: 'fa-calculator' },
-    { name: 'Notes', icon: 'fa-note-sticky' },
     { name: 'Books', icon: 'fa-book' },
-    { name: 'Projects', icon: 'fa-folder-open' },
-    { name: 'Hardware', icon: 'fa-microchip' },
-    { name: 'Other', icon: 'fa-ellipsis' }
+    { name: 'Electronics', icon: 'fa-microchip' },
+    { name: 'Hostel', icon: 'fa-house' },
+    { name: 'Clothing', icon: 'fa-shirt' },
+    { name: 'Lab', icon: 'fa-flask' },
+    { name: 'Sports', icon: 'fa-futbol' },
+    { name: 'Others', icon: 'fa-ellipsis' }
 ];
 
 const Home = () => {
@@ -144,7 +145,6 @@ const Home = () => {
                         {products.length > 0 ? (
                             displayedProducts.map((product) => {
                                 const inWishlist = wishlistIds.includes(product._id);
-                                const isSold = product.status === 'sold';
 
                                 return (
                                     <Col key={product._id}>
@@ -167,8 +167,7 @@ const Home = () => {
                                                 >
                                                     {product.category}
                                                 </Badge>
-                                                {isSold && <span className="product-sold-badge">Sold</span>}
-                                                {isAuthenticated && !isSold && (
+                                                {isAuthenticated && (
                                                     <button
                                                         type="button"
                                                         className="wishlist-heart-btn"
@@ -195,7 +194,7 @@ const Home = () => {
                                                 <Card.Text className="text-muted small text-truncate">
                                                     {product.description}
                                                 </Card.Text>
-                                                {isAuthenticated && !isSold && (
+                                                {isAuthenticated && (
                                                     <Button
                                                         variant="success"
                                                         size="sm"

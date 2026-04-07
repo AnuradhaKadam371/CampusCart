@@ -167,11 +167,12 @@ const EditProduct = () => {
             required
           >
             <option value="Books">Books</option>
-            <option value="Notes">Notes</option>
-            <option value="Calculator">Calculator</option>
-            <option value="Projects">Projects</option>
-            <option value="Hardware">Hardware</option>
-            <option value="Other">Other</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Hostel">Hostel</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Lab">Lab</option>
+            <option value="Sports">Sports</option>
+            <option value="Others">Others</option>
           </Form.Select>
         </Form.Group>
 
