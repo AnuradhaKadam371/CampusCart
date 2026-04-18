@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL || "https://campuscart-436h.onrender.com";
 
 export function getImageUrl(img, { placeholderSize = 600 } = {}) {
   if (!img) return `https://via.placeholder.com/${placeholderSize}`;

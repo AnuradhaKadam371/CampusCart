@@ -14,7 +14,7 @@ const MyRequests = () => {
   const fetchOrders = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/orders/my-all-requests",
+        "https://campuscart-436h.onrender.com/api/orders/my-all-requests",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -49,7 +49,7 @@ const MyRequests = () => {
   const withdrawRequest = async (id) => {
     try {
       await axios.delete(
-        `http://localhost:5000/api/orders/withdraw/${id}`,
+        `https://campuscart-436h.onrender.com/api/orders/withdraw/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

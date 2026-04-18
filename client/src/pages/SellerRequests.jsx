@@ -23,7 +23,7 @@ const SellerRequests = () => {
       }
 
       const res = await axios.get(
-        "http://localhost:5000/api/orders/seller-requests",
+        "https://campuscart-436h.onrender.com/api/orders/seller-requests",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -65,7 +65,7 @@ const SellerRequests = () => {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `http://localhost:5000/api/orders/reject/${id}`,
+        `https://campuscart-436h.onrender.com/api/orders/reject/${id}`,
         {},
         {
           headers: {

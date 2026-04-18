@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://campuscart-436h.onrender.com',
         changeOrigin: true
       }
     }
