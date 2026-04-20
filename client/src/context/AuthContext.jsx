@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
         if (token) {
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             try {
-                const res = await api.get('/api/auth/profile');
+                const res = await api.get('/auth/profile'); // ✅ FIXED
                 dispatch({
                     type: 'USER_LOADED',
                     payload: res.data
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (formData) => {
         try {
-            const res = await api.post('/api/auth/register', formData);
+            const res = await api.post('/auth/register', formData); // ✅ FIXED
 
             dispatch({
                 type: 'REGISTER_SUCCESS',
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (formData) => {
         try {
-            const res = await api.post('/api/auth/login', formData);
+            const res = await api.post('/auth/login', formData); // ✅ FIXED
 
             dispatch({
                 type: 'LOGIN_SUCCESS',
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }) => {
             if (token) {
                 api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 try {
-                    const profileRes = await api.get('/api/auth/profile');
+                    const profileRes = await api.get('/auth/profile'); // ✅ FIXED
                     dispatch({ type: 'USER_LOADED', payload: profileRes.data });
                 } catch (_) {
                     // ignore profile error
@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => dispatch({ type: 'LOGOUT' });
 
     const updateProfile = async (data) => {
-        await api.put('/api/auth/profile', data);
+        await api.put('/auth/profile', data); // ✅ FIXED
         await loadUser();
     };
 
