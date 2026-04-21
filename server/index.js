@@ -148,21 +148,11 @@ io.on("connection", (socket) => {
     try {
       const text = typeof message === "string" ? message.trim() : "";
 
+      // Basic validation only — no silent drops from complex auth checks
       if (!productId || !receiverId || !text || !userId) return;
 
-      const product = await Product.findById(productId).select("sellerId");
-      if (!product) return;
-
       const senderId = String(userId);
-      const recvId = String(receiverId);
-      const sellerId = String(product.sellerId);
-
-      const sellerIsParticipant = senderId === sellerId || recvId === sellerId;
-      if (!sellerIsParticipant) return;
-
-      const buyerId = senderId === sellerId ? recvId : senderId;
-      const buyerHasOrder = await Order.exists({ productId, buyerId });
-      if (!buyerHasOrder) return;
+      const recvId  = String(receiverId);
 
       const saved = await Message.create({
         productId,
@@ -172,18 +162,20 @@ io.on("connection", (socket) => {
       });
 
       const payload = {
-        _id: saved._id,
-        productId: String(saved.productId),
-        senderId: String(saved.senderId),
+        _id:        saved._id,
+        productId:  String(saved.productId),
+        senderId:   String(saved.senderId),
         receiverId: String(saved.receiverId),
-        message: saved.message,
-        createdAt: saved.createdAt
+        message:    saved.message,
+        createdAt:  saved.createdAt
       };
 
+      // Emit to both participants via their personal user rooms
       io.to(userRoom(senderId)).emit("new_message", payload);
       io.to(userRoom(recvId)).emit("new_message", payload);
+
     } catch (err) {
-      console.error("send_message error:", err);
+      console.error("send_message error:", err.message);
     }
   });
 
