@@ -36,10 +36,15 @@
     border-bottom: 1px solid #eee;
     padding: 0.65rem 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    overflow-x: auto;       /* horizontal scroll on tiny screens */
+    -webkit-overflow-scrolling: touch;
 }
 
 .category-bar .nav {
     gap: 0.4rem;
+    flex-wrap: nowrap;      /* stay on one row, scroll doesn't wrap */
+    padding: 0 12px;
+    min-width: max-content;
 }
 
 .category-bar .nav-link {
@@ -48,6 +53,7 @@
     padding: 8px 16px;
     border-radius: 999px;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .category-bar .nav-link:hover {
@@ -79,7 +85,7 @@
 .home-slider img,
 .home-slider .slider-img {
     width: 100%;
-    height: 350px;
+    height: clamp(180px, 35vw, 350px);
     object-fit: cover;
     
 }
@@ -103,12 +109,19 @@
 /* Product card image wrap – for heart overlay */
 .product-card-img-wrap {
     position: relative;
-    background: #f8f9fa;
+    background: #f1f5f9;
+    overflow: hidden;
 }
 
 .product-card-img-wrap .card-img-top {
-    object-fit: contain !important;
-    background: #f8f9fa;
+    height: 220px;
+    object-fit: cover !important;    /* cover = no white gaps, clean look */
+    background: #f1f5f9;
+    transition: transform 0.4s ease;
+}
+
+.product-card:hover .product-card-img-wrap .card-img-top {
+    transform: scale(1.04);
 }
 
 .wishlist-heart-btn {
@@ -205,9 +218,27 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
+    width: 100%;
     padding: 1.5rem 0;
+}
+
+.category-bar .nav-link {
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .category-bar {
+        padding: 0.4rem 0;
+    }
+
+    .category-bar .nav {
+        padding: 0 8px;
+    }
+
+    .category-bar .nav-link {
+        padding: 6px 12px;
+        font-size: 0.88rem;
+    }
 }
 
 .show-more-btn {

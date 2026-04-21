@@ -34,7 +34,14 @@ const AddProduct = () => {
 
     const onSubmit = async e => {
         e.preventDefault();
+
+        if (images.length === 0) {
+            setError('Please select at least one product photo before submitting.');
+            return;
+        }
+
         setSubmitting(true);
+        setError('');
 
         const data = new FormData();
         data.append('title', title);
@@ -42,10 +49,7 @@ const AddProduct = () => {
         data.append('price', price);
         data.append('category', category);
         data.append('pickupLocation', pickupLocation);
-
-        images.forEach(img => {
-            data.append('images', img);
-        });
+        images.forEach(img => data.append('images', img));
 
         try {
             await api.post('/products', data, {
@@ -53,7 +57,7 @@ const AddProduct = () => {
             });
             navigate('/home');
         } catch (err) {
-            setError(err.response?.data?.msg || 'Error adding product');
+            setError(err.response?.data?.msg || 'Error adding product. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -114,8 +118,12 @@ const AddProduct = () => {
                                         <div className="upload-icon-placeholder">
                                             <i className="fa-solid fa-cloud-arrow-up"></i>
                                         </div>
-                                        <span className="upload-text-main">Click to upload photos</span>
-                                        <span className="upload-text-sub">PNG, JPG or WEBP (max 5MB each)</span>
+                                        <span className="upload-text-main">
+                                            {images.length > 0
+                                                ? `${images.length} photo${images.length > 1 ? 's' : ''} selected ✓`
+                                                : 'Click to upload photos'}
+                                        </span>
+                                        <span className="upload-text-sub">PNG, JPG, WEBP (max 10MB each)</span>
                                     </div>
                                     <input
                                         id="product-images"
@@ -123,7 +131,6 @@ const AddProduct = () => {
                                         accept="image/*"
                                         multiple
                                         onChange={onFileChange}
-                                        required
                                         style={{ display: 'none' }}
                                     />
                                 </label>

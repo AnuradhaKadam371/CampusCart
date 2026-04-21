@@ -1,5 +1,6 @@
 import React, { createContext, useReducer, useEffect } from 'react';
 import api from '../utils/api';
+import { destroySocket } from '../utils/socket';
 
 const initialState = {
     token: localStorage.getItem('token'),
@@ -115,7 +116,10 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => dispatch({ type: 'LOGOUT' });
+    const logout = () => {
+        destroySocket();
+        dispatch({ type: 'LOGOUT' });
+    };
 
     const updateProfile = async (data) => {
         await api.put('/auth/profile', data); // ✅ FIXED

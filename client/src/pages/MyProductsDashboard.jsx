@@ -1,20 +1,10 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Button,
-  Spinner,
-  Alert,
-  Badge,
-  Form,
-} from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Spinner, Alert, Badge, Form } from "react-bootstrap";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/api";
 import { Link, useNavigate } from "react-router-dom";
 import { getImageUrl } from "../utils/imageUrl";
-import "./MyProducts.css";
+import "./MyProductsDashboard.css";
 
 const StatusBadge = ({ status }) => {
   const variant =
@@ -55,12 +45,10 @@ const MyProductsDashboard = () => {
   const [products, setProducts] = useState([]);
   const [loadingListings, setLoadingListings] = useState(true);
 
-  const [panel, setPanel] = useState("main"); // main | buyer | seller
-  const [listingsSubTab, setListingsSubTab] = useState("available"); // available | sold
-  const [buyerInnerTab, setBuyerInnerTab] = useState("requests"); // requests | purchases
   const [buyerTab, setBuyerTab] = useState("pending"); // pending | accepted | rejected
-  const [sellerSubTab, setSellerSubTab] = useState("incoming"); // incoming | upcoming | completed
-  const [buyerSubview, setBuyerSubview] = useState("hub"); // hub | requests (status filters)
+  const [expandedGroup, setExpandedGroup] = useState("listings"); // listings | buyer | seller
+  const [activeSection, setActiveSection] = useState({ group: "listings", sub: "available" });
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -428,260 +416,225 @@ const MyProductsDashboard = () => {
     );
   }
 
-  const goMain = () => {
-    setPanel("main");
-  };
-
-  const enterBuyer = () => {
-    setPanel("buyer");
-    setBuyerInnerTab("requests");
-    setBuyerSubview("requests");
-    setBuyerTab("pending");
-  };
-
-  const enterSeller = () => {
-    setPanel("seller");
-    setSellerSubTab("incoming");
+  const setSection = (group, sub) => {
+    setExpandedGroup(group);
+    setActiveSection({ group, sub });
+    if (group === "buyer" && sub === "requests") setBuyerTab("pending");
+    setMobileSidebarOpen(false);
   };
 
   return (
-    <Container className="py-5 profile-page">
+    <Container className="py-4 mpd-page">
       {message.text && (
         <Alert variant={message.type} dismissible onClose={() => setMessage({ type: "", text: "" })}>
           {message.text}
         </Alert>
       )}
 
-      {/* ================= MAIN TABS (listings hub) ================= */}
-      {panel === "main" && (
-        <div className="mp-main-tabs mb-4">
-          <button
-            type="button"
-            className="mp-tab mp-tab-animate"
-            data-active={true}
-            onClick={() => setPanel("main")}
-          >
-            My Listings
-            <Badge bg="secondary" className="ms-1">{products.length}</Badge>
-          </button>
-          <button type="button" className="mp-tab mp-tab-animate" onClick={enterBuyer}>
-            Buyer
-          </button>
-          <button type="button" className="mp-tab mp-tab-animate" onClick={enterSeller}>
-            Seller
-          </button>
-        </div>
-      )}
+      <div className="mpd-topbar d-lg-none">
+        <Button variant="outline-primary" size="sm" className="mpd-menu-btn" onClick={() => setMobileSidebarOpen((v) => !v)}>
+          <i className="fa-solid fa-bars me-1" />
+          <span className="d-none d-sm-inline">Menu</span>
+        </Button>
+        <div className="mpd-topbar-title">My Dashboard</div>
+      </div>
 
-      {/* ================= MY LISTINGS ================= */}
-      {panel === "main" && (
-        <>
-          {/* Listings Sub-Tabs: Available / Sold */}
-          <div className="mp-listings-subtabs mb-3">
-            <button
-              type="button"
-              className={`mp-listings-subtab ${listingsSubTab === "available" ? "active" : ""}`}
-              onClick={() => setListingsSubTab("available")}
-            >
-              Available Products
-              <Badge bg="success" className="ms-2">
-                {products.filter((p) => p.status !== "sold").length}
-              </Badge>
-            </button>
-            <button
-              type="button"
-              className={`mp-listings-subtab ${listingsSubTab === "sold" ? "active" : ""}`}
-              onClick={() => setListingsSubTab("sold")}
-            >
-              Sold Products
-              <Badge bg="secondary" className="ms-2">
-                {products.filter((p) => p.status === "sold").length}
-              </Badge>
-            </button>
+      <div
+        className={`mpd-layout ${mobileSidebarOpen ? "sidebar-open" : ""}`}
+        onClick={(e) => {
+          // Close on backdrop click (the ::before pseudo-el is behind sidebar)
+          if (mobileSidebarOpen && e.target === e.currentTarget) setMobileSidebarOpen(false);
+        }}
+      >
+        <aside className="mpd-sidebar">
+          {/* Close button — only visible on mobile */}
+          <div className="d-flex justify-content-between align-items-center mb-3 d-lg-none">
+            <div className="fw-bold" style={{ fontSize: "1rem", color: "#1e293b" }}>Dashboard</div>
+            <Button variant="light" size="sm" style={{ borderRadius: 10 }} onClick={() => setMobileSidebarOpen(false)}>
+              <i className="fa-solid fa-xmark" />
+            </Button>
+          </div>
+          <div className="mpd-sidebar-header d-none d-lg-flex">
+            <div className="mpd-sidebar-title">Dashboard</div>
+            <div className="text-muted small">My Products</div>
           </div>
 
-          <Row xs={1} md={2} lg={3} className="g-4">
-            {products
-              .filter((p) =>
-                listingsSubTab === "available"
-                  ? p.status !== "sold"
-                  : p.status === "sold"
-              )
-              .length === 0 ? (
-              <Col>
-                <Alert variant="light">
-                  {listingsSubTab === "available"
-                    ? "No available listings."
-                    : "No sold items yet."}
-                </Alert>
-              </Col>
-            ) : (
-              products
-                .filter((p) =>
-                  listingsSubTab === "available"
-                    ? p.status !== "sold"
-                    : p.status === "sold"
-                )
-                .map((product) => (
-                  <Col key={product._id}>
-                    <Card className="h-100 shadow-sm position-relative profile-product-card mp-card">
-                      {product.status === "sold" && <div className="profile-sold-badge">SOLD</div>}
-                      <Card.Img
-                        variant="top"
-                        src={getImageUrl(product.images?.[0], { placeholderSize: 600 })}
-                        style={{ height: 200, objectFit: "contain", background: "#f8f9fa" }}
-                      />
-                      <Card.Body>
-                        <Badge bg="light" text="dark">{product.category}</Badge>
-                        <Card.Title className="mt-2 mb-1">{product.title}</Card.Title>
-                        <div className="text-primary fw-bold">₹{product.price}</div>
-                        <div className="small text-muted mt-2" title={product.description}>
-                          {product.description}
-                        </div>
-                        {product.status !== "sold" && (
-                        <div className="d-flex gap-2 mt-3">
-                          <Link to={`/edit-product/${product._id}`} className="w-100">
-                            <Button variant="outline-primary" size="sm" className="w-100">Edit</Button>
-                          </Link>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            className="w-100"
-                            disabled={deletingId === product._id}
-                            onClick={() => deleteProduct(product._id)}
-                          >
-                            {deletingId === product._id ? "Deleting…" : "Delete"}
-                          </Button>
-                        </div>
-                        )}
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))
-            )}
-          </Row>
-        </>
-      )}
-
-      {/* ================= BUYER ================= */}
-      {panel === "buyer" && (
-        <>
-          <div className="mp-section-header">
-            <i className="fa-solid fa-bag-shopping me-2"></i>
-            Buyer Section
-          </div>
-          {buyerSubview === "hub" && (
-            <div className="mp-subnav mb-3">
-              <button type="button" className="mp-back-btn" onClick={goMain} aria-label="Back">
-                <i className="fa-solid fa-arrow-left" />
-              </button>
-              <div className="mp-main-tabs flex-grow-1">
-                <button
-                  type="button"
-                  className="mp-tab mp-tab-animate"
-                  data-active={buyerInnerTab === "requests"}
-                  onClick={() => {
-                    setBuyerInnerTab("requests");
-                    setBuyerSubview("requests");
-                  }}
-                >
-                  My Requests
+          <div className="mpd-nav">
+            <button type="button" className={`mpd-group ${expandedGroup === "listings" ? "expanded" : ""}`} onClick={() => setExpandedGroup("listings")}>
+              <span className="mpd-group-label">
+                <i className="fa-solid fa-box-open me-2" />
+                My Listings
+              </span>
+              <i className={`fa-solid fa-chevron-${expandedGroup === "listings" ? "down" : "right"}`} />
+            </button>
+            {expandedGroup === "listings" && (
+              <div className="mpd-subnav">
+                <button type="button" className={`mpd-item ${activeSection.group === "listings" && activeSection.sub === "available" ? "active" : ""}`} onClick={() => setSection("listings", "available")}>
+                  <span>Available Products</span>
+                  <Badge bg="success">{products.filter((p) => p.status !== "sold").length}</Badge>
                 </button>
-                <button
-                  type="button"
-                  className="mp-tab mp-tab-animate"
-                  data-active={buyerInnerTab === "purchases"}
-                  onClick={() => {
-                    setBuyerInnerTab("purchases");
-                    setBuyerSubview("hub");
-                  }}
-                >
-                  My Purchases
+                <button type="button" className={`mpd-item ${activeSection.group === "listings" && activeSection.sub === "sold" ? "active" : ""}`} onClick={() => setSection("listings", "sold")}>
+                  <span>Sold Products</span>
+                  <Badge bg="secondary">{products.filter((p) => p.status === "sold").length}</Badge>
                 </button>
               </div>
+            )}
+
+            <button type="button" className={`mpd-group ${expandedGroup === "buyer" ? "expanded" : ""}`} onClick={() => setExpandedGroup("buyer")}>
+              <span className="mpd-group-label">
+                <i className="fa-solid fa-bag-shopping me-2" />
+                Buyer
+              </span>
+              <i className={`fa-solid fa-chevron-${expandedGroup === "buyer" ? "down" : "right"}`} />
+            </button>
+            {expandedGroup === "buyer" && (
+              <div className="mpd-subnav">
+                <button type="button" className={`mpd-item ${activeSection.group === "buyer" && activeSection.sub === "requests" ? "active" : ""}`} onClick={() => setSection("buyer", "requests")}>
+                  <span>My Requests</span>
+                  <Badge bg="secondary">{buyerPending.length + buyerAccepted.length + buyerRejected.length}</Badge>
+                </button>
+                <button type="button" className={`mpd-item ${activeSection.group === "buyer" && activeSection.sub === "purchases" ? "active" : ""}`} onClick={() => setSection("buyer", "purchases")}>
+                  <span>Purchased Products</span>
+                  <Badge bg="secondary">{buyerCompleted.length}</Badge>
+                </button>
+              </div>
+            )}
+
+            <button type="button" className={`mpd-group ${expandedGroup === "seller" ? "expanded" : ""}`} onClick={() => setExpandedGroup("seller")}>
+              <span className="mpd-group-label">
+                <i className="fa-solid fa-store me-2" />
+                Seller
+              </span>
+              <i className={`fa-solid fa-chevron-${expandedGroup === "seller" ? "down" : "right"}`} />
+            </button>
+            {expandedGroup === "seller" && (
+              <div className="mpd-subnav">
+                <button type="button" className={`mpd-item ${activeSection.group === "seller" && activeSection.sub === "incoming" ? "active" : ""}`} onClick={() => setSection("seller", "incoming")}>
+                  <span>Incoming Requests</span>
+                  <Badge bg="secondary">{sellerIncoming.length}</Badge>
+                </button>
+                <button type="button" className={`mpd-item ${activeSection.group === "seller" && activeSection.sub === "upcoming" ? "active" : ""}`} onClick={() => setSection("seller", "upcoming")}>
+                  <span>Upcoming Shipping</span>
+                  <Badge bg="secondary">{sellerUpcomingShipping.length}</Badge>
+                </button>
+                <button type="button" className={`mpd-item ${activeSection.group === "seller" && activeSection.sub === "completed" ? "active" : ""}`} onClick={() => setSection("seller", "completed")}>
+                  <span>Completed Orders</span>
+                  <Badge bg="secondary">{sellerCompleted.length}</Badge>
+                </button>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <main className="mpd-content">
+          <div className="mpd-content-header">
+            <div className="mpd-h1">{activeSection.group === "listings" ? "My Listings" : activeSection.group === "buyer" ? "Buyer" : "Seller"}</div>
+            <div className="mpd-h2 text-muted">
+              {activeSection.group === "listings"
+                ? activeSection.sub === "available"
+                  ? "Available Products"
+                  : "Sold Products"
+                : activeSection.group === "buyer"
+                  ? activeSection.sub === "requests"
+                    ? "My Requests"
+                    : "Purchased Products"
+                  : activeSection.sub === "incoming"
+                    ? "Incoming Requests"
+                    : activeSection.sub === "upcoming"
+                      ? "Upcoming Shipping"
+                      : "Completed Orders"}
             </div>
+          </div>
+
+          {activeSection.group === "listings" && (
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {products.filter((p) => (activeSection.sub === "available" ? p.status !== "sold" : p.status === "sold")).length === 0 ? (
+                <Col>
+                  <Alert variant="light">{activeSection.sub === "available" ? "No available listings." : "No sold items yet."}</Alert>
+                </Col>
+              ) : (
+                products
+                  .filter((p) => (activeSection.sub === "available" ? p.status !== "sold" : p.status === "sold"))
+                  .map((product) => (
+                    <Col key={product._id}>
+                      <Card className="h-100 shadow-sm position-relative mpd-card">
+                        {product.status === "sold" && <div className="mpd-sold-badge">SOLD</div>}
+                        <Card.Img variant="top" src={getImageUrl(product.images?.[0], { placeholderSize: 600 })} className="mpd-card-img" alt="" />
+                        <Card.Body>
+                          <Badge bg="light" text="dark">{product.category}</Badge>
+                          <Card.Title className="mt-2 mb-1">{product.title}</Card.Title>
+                          <div className="text-primary fw-bold">₹{product.price}</div>
+                          <div className="small text-muted mt-2" title={product.description}>{product.description}</div>
+                          {product.status !== "sold" && (
+                            <div className="d-flex gap-2 mt-3 flex-wrap">
+                              <Link to={`/edit-product/${product._id}`} className="flex-grow-1">
+                                <Button variant="outline-primary" size="sm" className="w-100">Edit</Button>
+                              </Link>
+                              <Button variant="outline-danger" size="sm" className="flex-grow-1" disabled={deletingId === product._id} onClick={() => deleteProduct(product._id)}>
+                                {deletingId === product._id ? "Deleting…" : "Delete"}
+                              </Button>
+                            </div>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))
+              )}
+            </Row>
           )}
 
-          {buyerSubview === "requests" && (
-            <div className="mp-subnav mb-3">
-              <button
-                type="button"
-                className="mp-back-btn"
-                onClick={() => setBuyerSubview("hub")}
-                aria-label="Back"
-              >
-                <i className="fa-solid fa-arrow-left" />
-              </button>
-              <div className="mp-main-tabs flex-grow-1">
-                <button
-                  type="button"
-                  className="mp-tab mp-tab-animate"
-                  data-active={buyerTab === "pending"}
-                  onClick={() => setBuyerTab("pending")}
-                >
+          {activeSection.group === "buyer" && activeSection.sub === "requests" && (
+            <>
+              <div className="mpd-inline-tabs mb-3">
+                <button type="button" className={`mpd-inline-tab ${buyerTab === "pending" ? "active" : ""}`} onClick={() => setBuyerTab("pending")}>
                   Pending <Badge bg="secondary" className="ms-1">{buyerPending.length}</Badge>
                 </button>
-                <button
-                  type="button"
-                  className="mp-tab mp-tab-animate"
-                  data-active={buyerTab === "accepted"}
-                  onClick={() => setBuyerTab("accepted")}
-                >
+                <button type="button" className={`mpd-inline-tab ${buyerTab === "accepted" ? "active" : ""}`} onClick={() => setBuyerTab("accepted")}>
                   Accepted <Badge bg="secondary" className="ms-1">{buyerAccepted.length}</Badge>
                 </button>
-                <button
-                  type="button"
-                  className="mp-tab mp-tab-animate"
-                  data-active={buyerTab === "rejected"}
-                  onClick={() => setBuyerTab("rejected")}
-                >
+                <button type="button" className={`mpd-inline-tab ${buyerTab === "rejected" ? "active" : ""}`} onClick={() => setBuyerTab("rejected")}>
                   Rejected <Badge bg="secondary" className="ms-1">{buyerRejected.length}</Badge>
                 </button>
               </div>
-            </div>
-          )}
 
-          {buyerSubview === "requests" && (
-            <Row className="g-4 mb-4">
-              {buyerTab === "pending" && buyerPending.length === 0 && (
-                <Col>
-                  <Alert variant="light">No pending requests.</Alert>
-                </Col>
-              )}
-              {buyerTab === "pending" &&
-                buyerPending.map((o) => (
+              <Row className="g-4 mb-4">
+                {buyerTab === "pending" && buyerPending.length === 0 && (
+                  <Col>
+                    <Alert variant="light">No pending requests.</Alert>
+                  </Col>
+                )}
+                {buyerTab === "pending" && buyerPending.map((o) => (
                   <Col key={o._id} md={6} lg={4}>
                     {renderOrderCard({ order: o, variant: "buyer", canWithdraw: true, canChat: true })}
                   </Col>
                 ))}
 
-              {buyerTab === "accepted" && buyerAccepted.length === 0 && (
-                <Col>
-                  <Alert variant="light">No accepted requests.</Alert>
-                </Col>
-              )}
-              {buyerTab === "accepted" &&
-                buyerAccepted.map((o) => (
+                {buyerTab === "accepted" && buyerAccepted.length === 0 && (
+                  <Col>
+                    <Alert variant="light">No accepted requests.</Alert>
+                  </Col>
+                )}
+                {buyerTab === "accepted" && buyerAccepted.map((o) => (
                   <Col key={o._id} md={6} lg={4}>
                     {renderOrderCard({ order: o, variant: "buyer", canChat: true })}
                   </Col>
                 ))}
 
-              {buyerTab === "rejected" && buyerRejected.length === 0 && (
-                <Col>
-                  <Alert variant="light">No rejected requests.</Alert>
-                </Col>
-              )}
-              {buyerTab === "rejected" &&
-                buyerRejected.map((o) => (
+                {buyerTab === "rejected" && buyerRejected.length === 0 && (
+                  <Col>
+                    <Alert variant="light">No rejected requests.</Alert>
+                  </Col>
+                )}
+                {buyerTab === "rejected" && buyerRejected.map((o) => (
                   <Col key={o._id} md={6} lg={4}>
                     {renderOrderCard({ order: o, variant: "buyer", canChat: true })}
                   </Col>
                 ))}
-            </Row>
+              </Row>
+            </>
           )}
 
-          {buyerSubview === "hub" && buyerInnerTab === "purchases" && (
+          {activeSection.group === "buyer" && activeSection.sub === "purchases" && (
             <div>
               {buyerCompleted.length === 0 ? (
                 <Alert variant="light">No completed purchases yet.</Alert>
@@ -693,12 +646,8 @@ const MyProductsDashboard = () => {
 
                     return (
                       <Col key={order._id} md={6} lg={4}>
-                        <Card className="shadow-sm h-100 mp-card">
-                          <Card.Img
-                            variant="top"
-                            src={getImageUrl(order.productImage || order.images?.[0], { placeholderSize: 600 })}
-                            style={{ height: 190, objectFit: "contain", background: "#f8f9fa" }}
-                          />
+                        <Card className="shadow-sm h-100 mpd-card">
+                          <Card.Img variant="top" src={getImageUrl(order.productImage || order.images?.[0], { placeholderSize: 600 })} className="mpd-card-img" alt="" />
                           <Card.Body>
                             <div className="d-flex justify-content-between gap-3 align-items-start">
                               <div>
@@ -720,7 +669,7 @@ const MyProductsDashboard = () => {
                             ) : (
                               <div className="mt-3">
                                 <div className="mb-2 fw-bold">Rate seller</div>
-                                <div className="d-flex gap-1 mb-2">
+                                <div className="d-flex gap-1 mb-2 flex-wrap">
                                   {[1, 2, 3, 4, 5].map((n) => (
                                     <Button
                                       key={n}
@@ -750,12 +699,7 @@ const MyProductsDashboard = () => {
                                   }
                                 />
                                 <div className="mt-2">
-                                  <Button
-                                    size="sm"
-                                    variant="primary"
-                                    disabled={busyReviewOrderId === order._id}
-                                    onClick={() => submitReview(order)}
-                                  >
+                                  <Button size="sm" variant="primary" disabled={busyReviewOrderId === order._id} onClick={() => submitReview(order)}>
                                     {busyReviewOrderId === order._id ? "Submitting…" : "Submit Review"}
                                   </Button>
                                 </div>
@@ -770,112 +714,60 @@ const MyProductsDashboard = () => {
               )}
             </div>
           )}
-        </>
-      )}
 
-      {/* ================= SELLER ================= */}
-      {panel === "seller" && (
-        <>
-          <div className="mp-section-header">
-            <i className="fa-solid fa-store me-2"></i>
-            Seller Section
-          </div>
-          <div className="mp-subnav mb-3">
-            <button type="button" className="mp-back-btn" onClick={goMain} aria-label="Back">
-              <i className="fa-solid fa-arrow-left" />
-            </button>
-            <div className="mp-main-tabs flex-grow-1">
-              <button
-                type="button"
-                className="mp-tab mp-tab-animate"
-                data-active={sellerSubTab === "incoming"}
-                onClick={() => setSellerSubTab("incoming")}
-              >
-                Incoming Requests
-              </button>
-              <button
-                type="button"
-                className="mp-tab mp-tab-animate"
-                data-active={sellerSubTab === "upcoming"}
-                onClick={() => setSellerSubTab("upcoming")}
-              >
-                Upcoming Shipping
-              </button>
-              <button
-                type="button"
-                className="mp-tab mp-tab-animate"
-                data-active={sellerSubTab === "completed"}
-                onClick={() => setSellerSubTab("completed")}
-              >
-                Completed Orders
-              </button>
-            </div>
-          </div>
-
-          {sellerSubTab === "incoming" && (
+          {activeSection.group === "seller" && (
             <>
-              {sellerIncoming.length === 0 ? (
-                <Alert variant="light">No incoming requests.</Alert>
-              ) : (
-                <Row className="g-4 mb-4">
-                  {sellerIncoming.map((o) => (
-                    <Col key={o._id} md={6} lg={4}>
-                      {renderOrderCard({
-                        order: o,
-                        variant: "seller",
-                        canReject: true,
-                        canAccept: true,
-                        canChat: true,
-                      })}
-                    </Col>
-                  ))}
-                </Row>
+              {activeSection.sub === "incoming" && (
+                <>
+                  {sellerIncoming.length === 0 ? (
+                    <Alert variant="light">No incoming requests.</Alert>
+                  ) : (
+                    <Row className="g-4 mb-4">
+                      {sellerIncoming.map((o) => (
+                        <Col key={o._id} md={6} lg={4}>
+                          {renderOrderCard({ order: o, variant: "seller", canReject: true, canAccept: true, canChat: true })}
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                </>
+              )}
+
+              {activeSection.sub === "upcoming" && (
+                <>
+                  {sellerUpcomingShipping.length === 0 ? (
+                    <Alert variant="light">No upcoming shipping orders.</Alert>
+                  ) : (
+                    <Row className="g-4 mb-4">
+                      {sellerUpcomingShipping.map((o) => (
+                        <Col key={o._id} md={6} lg={4}>
+                          {renderOrderCard({ order: o, variant: "seller", canMarkCompleted: true, canChat: true })}
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                </>
+              )}
+
+              {activeSection.sub === "completed" && (
+                <>
+                  {sellerCompleted.length === 0 ? (
+                    <Alert variant="light">No completed orders.</Alert>
+                  ) : (
+                    <Row className="g-4">
+                      {sellerCompleted.map((o) => (
+                        <Col key={o._id} md={6} lg={4}>
+                          {renderOrderCard({ order: o, variant: "seller", canChat: true })}
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                </>
               )}
             </>
           )}
-
-          {sellerSubTab === "upcoming" && (
-            <>
-              {sellerUpcomingShipping.length === 0 ? (
-                <Alert variant="light">No upcoming shipping orders.</Alert>
-              ) : (
-                <Row className="g-4 mb-4">
-                  {sellerUpcomingShipping.map((o) => (
-                    <Col key={o._id} md={6} lg={4}>
-                      {renderOrderCard({
-                        order: o,
-                        variant: "seller",
-                        canMarkCompleted: true,
-                        canChat: true,
-                      })}
-                    </Col>
-                  ))}
-                </Row>
-              )}
-            </>
-          )}
-
-          {sellerSubTab === "completed" && (
-            <>
-              {sellerCompleted.length === 0 ? (
-                <Alert variant="light">No completed orders.</Alert>
-              ) : (
-                <Row className="g-4">
-                  {sellerCompleted.map((o) => (
-                    <Col key={o._id} md={6} lg={4}>
-                      {renderOrderCard({
-                        order: o,
-                        variant: "seller",
-                        canChat: true,
-                      })}
-                    </Col>
-                  ))}
-                </Row>
-              )}
-            </>
-          )}
-        </>
-      )}
+        </main>
+      </div>
     </Container>
   );
 };

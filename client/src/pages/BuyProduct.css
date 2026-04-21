@@ -29,6 +29,8 @@
 .buy-product-img {
     max-height: 380px;
     object-fit: contain;
+    width: 100%;
+    height: auto;
 }
 
 .buy-details {
@@ -72,4 +74,28 @@
 .confirm-order-btn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(25, 135, 84, 0.35);
+}
+
+@media (max-width: 575.98px) {
+    .buy-details {
+        padding: 1.25rem !important;
+    }
+
+    .buy-product-title {
+        font-size: 1.35rem;
+    }
+
+    .buy-price {
+        font-size: 1.25rem;
+    }
+
+    .confirm-order-btn {
+        width: 100%;
+        padding: 12px 16px;
+    }
+
+    .buy-image-wrap {
+        min-height: 220px;
+        padding: 0.75rem;
+    }
 }

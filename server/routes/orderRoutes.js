@@ -90,19 +90,26 @@ router.post("/create", authMiddleware, async (req, res) => {
   status: "pending",
 });
 
-    const buyer = await User.findById(buyerId);
-
-    await sendEmail(product.sellerId.email, "New Purchase Request", {
-      type: "request",
-      data: {
-        sellerName: product.sellerId.name,
-        buyerName: buyer.name,
-        productTitle: product.title,
-        category: product.category,
-        description: product.description,
-        amount: product.price,
-      },
-    });
+    // Email should not break order creation in production.
+    try {
+      const buyer = await User.findById(buyerId);
+      const sellerEmail = product.sellerId?.email;
+      if (sellerEmail) {
+        await sendEmail(sellerEmail, "New Purchase Request", {
+          type: "request",
+          data: {
+            sellerName: product.sellerId?.name || "Seller",
+            buyerName: buyer?.name || "Buyer",
+            productTitle: product.title,
+            category: product.category,
+            description: product.description,
+            amount: product.price,
+          },
+        });
+      }
+    } catch (emailErr) {
+      console.error("Order email send failed:", emailErr?.message || emailErr);
+    }
 
     res.status(201).json({
       msg: "Order created successfully",

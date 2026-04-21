@@ -4,7 +4,7 @@ import { Navbar, Nav, Container, Button, Form, Image, Badge } from 'react-bootst
 import { AuthContext } from '../context/AuthContext';
 import './Navbar.css'; // Hover + active styles
 import { getImageUrl } from '../utils/imageUrl';
-import { createSocket } from '../utils/socket';
+import { getSocket } from '../utils/socket';
 
 const Navigation = () => {
     const { isAuthenticated, logout, user } = useContext(AuthContext);
@@ -42,7 +42,7 @@ const Navigation = () => {
     useEffect(() => {
         if (!isAuthenticated || !myId) return;
 
-        const socket = createSocket();
+        const socket = getSocket();
 
         const handleTotalRefresh = () => {
             setUnreadTotal(getUnreadTotal());
@@ -80,7 +80,6 @@ const Navigation = () => {
 
         return () => {
             socket.off('new_message', onNewMessage);
-            socket.disconnect();
             window.removeEventListener('chatUnreadUpdated', handleTotalRefresh);
         };
     }, [isAuthenticated, myId]);

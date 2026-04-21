@@ -7,53 +7,56 @@ const {
     createProduct,
     deleteProduct,
     getMyProducts,
-    updateProduct          // ✅ added
+    updateProduct
 } = require('../controllers/productController');
 
 const auth = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
 
-// Multer Config
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
+// ✅ Memory storage — required for piping directly to Cloudinary (no disk writes)
+const storage = multer.memoryStorage();
 
+// Accept all common image MIME types (webp included)
 const fileFilter = (req, file, cb) => {
-    if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg'
-    ) {
+    const allowed = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+        'image/avif'
+    ];
+    if (allowed.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(null, false);
+        cb(new Error(`Unsupported file type: ${file.mimetype}`), false);
     }
 };
 
 const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 1024 * 1024 * 5
-    },
-    fileFilter: fileFilter
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+    fileFilter
 });
 
+// ---------------- ROUTES ----------------
+
+// Get all products (public)
 router.get('/', getProducts);
+
+// Get my products (auth)
 router.get('/myproducts', auth, getMyProducts);
+
+// Get single product (public)
 router.get('/:id', getProductById);
 
-router.post('/', auth,upload.array("images", 5), createProduct);
+// Create product with up to 5 images (auth + upload)
+router.post('/', auth, upload.array('images', 5), createProduct);
 
-// ✅ update product (edit)
-router.put('/:id', auth, upload.array("images", 5), updateProduct);
+// Update product (auth + optional new images)
+router.put('/:id', auth, upload.array('images', 5), updateProduct);
 
-// delete product
+// Delete product (auth)
 router.delete('/:id', auth, deleteProduct);
 
 module.exports = router;

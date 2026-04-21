@@ -22,6 +22,15 @@
     --radius-lg: 1rem;
 }
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: #f8fafc;
@@ -145,6 +154,41 @@ body {
     position: relative;
     overflow: hidden;
     box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.15);
+}
+
+.hero-section .container,
+.hero-section .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.hero-section .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.hero-section img,
+.hero-section svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.search-bar {
+    max-width: min(700px, calc(100% - 2rem));
+}
+
+@media (max-width: 575.98px) {
+    .auth-container {
+        margin: 1.5rem auto;
+        padding: 1.25rem;
+        border-radius: 18px;
+    }
+
+    .hero-section {
+        padding: 3.5rem 0 5rem;
+        border-radius: 0 0 2rem 2rem;
+        margin-bottom: 2.5rem;
+    }
 }
 
 .hero-section::before {

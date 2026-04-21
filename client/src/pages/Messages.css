@@ -3,57 +3,67 @@
   margin: 0 auto;
   padding-left: 12px;
   padding-right: 12px;
+  overflow-x: hidden;
 }
 
 .messages-shell {
   border-radius: 16px;
   overflow: hidden;
-  min-height: min(78vh, 720px);
+  min-height: min(80vh, 720px);
   transition: box-shadow 0.25s ease;
 }
 
 .messages-panels {
   display: flex;
-  min-height: min(78vh, 720px);
+  min-height: min(80vh, 720px);
 }
 
+/* ===================== SIDEBAR ===================== */
 .messages-sidebar {
   width: 100%;
-  max-width: 340px;
+  max-width: 320px;
   flex-shrink: 0;
   background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .messages-list {
   overflow-y: auto;
-  max-height: calc(78vh - 72px);
+  flex: 1;
 }
 
+/* ===================== THREADS ===================== */
 .messages-thread-card {
   width: 100%;
   text-align: left;
   border: none;
   border-bottom: 1px solid #e9ecef;
   background: #fff;
-  padding: 14px 16px;
+  padding: 13px 16px;
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  transition: background 0.2s ease, border-left 0.15s ease;
 }
 
 .messages-thread-card:hover {
-  background: rgba(13, 110, 253, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(13, 110, 253, 0.12);
+  background: rgba(13, 110, 253, 0.04);
 }
 
 .messages-thread-card.active {
-  background: rgba(13, 110, 253, 0.1);
+  background: rgba(13, 110, 253, 0.08);
   border-left: 3px solid #0d6efd;
   padding-left: 13px;
 }
 
 .messages-thread-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
@@ -98,42 +108,98 @@
 
 .messages-unread-badge {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 
 .messages-thread-product {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #64748b;
-  margin-top: 4px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ===================== MAIN PANEL ===================== */
 .messages-empty {
   min-height: 280px;
   font-size: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: #94a3b8;
 }
 
 .messages-main {
   flex: 1;
   min-width: 0;
   background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-chat-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .messages-chat-wrap .chat-messages {
   height: min(52vh, 480px);
 }
 
+/* ===================== MOBILE ===================== */
 @media (max-width: 767.98px) {
+  .messages-page {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* On mobile: show only sidebar OR chat, not both */
   .messages-panels {
     flex-direction: column;
+    min-height: auto;
+  }
+
+  .messages-shell {
+    min-height: auto;
   }
 
   .messages-sidebar {
-    max-width: none;
-    border-end: none !important;
-    border-bottom: 1px solid #e9ecef;
+    max-width: 100%;
+    border-right: none !important;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  /* When a conversation is selected on mobile, hide sidebar to give chat full space */
+  .messages-panels.has-chat .messages-sidebar {
+    display: none;
+  }
+
+  .messages-panels.has-chat .messages-main {
+    min-height: 70vh;
   }
 
   .messages-list {
-    max-height: 220px;
+    max-height: 240px;
+  }
+
+  .messages-thread-card {
+    padding: 11px 14px;
+  }
+
+  .messages-chat-wrap .chat-messages {
+    height: min(45vh, 380px);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .messages-thread-name {
+    font-size: 0.88rem;
+  }
+
+  .messages-thread-avatar,
+  .messages-thread-avatar-placeholder {
+    width: 38px;
+    height: 38px;
   }
 }

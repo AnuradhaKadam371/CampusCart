@@ -1,0 +1,316 @@
+/* =====================================================
+   MyProductsDashboard — Full Redesign
+   ===================================================== */
+
+/* Page container */
+.mpd-page {
+  max-width: 1300px;
+}
+
+/* ---- TOPBAR (mobile only) ---- */
+.mpd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.mpd-topbar-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+
+.mpd-menu-btn {
+  border-radius: 10px !important;
+  font-weight: 600;
+}
+
+/* ---- GRID LAYOUT ---- */
+.mpd-layout {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 22px;
+  align-items: stretch;   /* sidebar stretches to content height */
+  min-height: calc(100vh - 160px);
+}
+
+/* ---- SIDEBAR ---- */
+.mpd-sidebar {
+  background: #fff;
+  border: 1px solid #e8edf4;
+  border-radius: 20px;
+  padding: 20px 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  /* Sticky so it stays visible while scrolling content */
+  position: sticky;
+  top: 80px;
+  align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Thin scrollbar on sidebar */
+.mpd-sidebar::-webkit-scrollbar { width: 4px; }
+.mpd-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+.mpd-sidebar-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px 14px;
+  border-bottom: 1px solid #e8edf4;
+  margin-bottom: 12px;
+}
+
+.mpd-sidebar-title {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+/* ---- NAV ---- */
+.mpd-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Group button (expandable section) */
+.mpd-group {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  letter-spacing: 0.01em;
+}
+
+.mpd-group:hover {
+  background: #f1f5f9;
+  color: #0d6efd;
+}
+
+.mpd-group.expanded {
+  background: #eff6ff;
+  color: #0d6efd;
+}
+
+.mpd-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Sub-nav */
+.mpd-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 10px;
+  padding-right: 6px;
+  margin-bottom: 4px;
+}
+
+/* Individual item */
+.mpd-item {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.mpd-item:hover {
+  background: #f8fafc;
+  color: #0d6efd;
+}
+
+.mpd-item.active {
+  background: #eff6ff;
+  color: #0d6efd;
+  border-color: rgba(13,110,253,0.2);
+  font-weight: 700;
+  box-shadow: inset 4px 0 0 #0d6efd;
+}
+
+/* ---- CONTENT AREA ---- */
+.mpd-content {
+  min-width: 0;
+}
+
+.mpd-content-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e8edf4;
+}
+
+.mpd-h1 {
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.mpd-h2 {
+  font-weight: 500;
+  font-size: 0.88rem;
+  color: #94a3b8;
+}
+
+/* ---- PRODUCT CARDS ---- */
+.mpd-card {
+  border-radius: 16px !important;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  border: 1px solid #e8edf4 !important;
+}
+
+.mpd-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important;
+}
+
+/* Product image — use cover so no white padding, looks polished */
+.mpd-card-img {
+  height: 210px;
+  object-fit: cover !important;
+  background: #f1f5f9;
+}
+
+/* Order card image */
+.mp-card .card-img-top {
+  height: 190px;
+  object-fit: cover !important;
+  background: #f1f5f9;
+}
+
+.mpd-sold-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.76rem;
+  box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+  z-index: 2;
+  letter-spacing: 0.08rem;
+}
+
+/* ---- INLINE TABS ---- */
+.mpd-inline-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.mpd-inline-tab {
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.87rem;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.mpd-inline-tab:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+  color: #0d6efd;
+}
+
+.mpd-inline-tab.active {
+  border-color: #0d6efd;
+  background: #eff6ff;
+  color: #0d6efd;
+  box-shadow: 0 2px 8px rgba(13,110,253,0.15);
+}
+
+/* ===================== MOBILE ===================== */
+@media (max-width: 991.98px) {
+  .mpd-layout {
+    grid-template-columns: 1fr;
+    min-height: unset;
+  }
+
+  /* Mobile: sidebar is a fixed overlay */
+  .mpd-sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 290px;
+    height: 100dvh;
+    max-height: 100dvh;
+    background: #fff;
+    z-index: 1060;
+    overflow-y: auto;
+    padding: 24px 16px;
+    box-shadow: 6px 0 28px rgba(0,0,0,0.16);
+    border-right: 1px solid #e2e8f0;
+    border-radius: 0;
+  }
+
+  /* Semi-transparent backdrop when open */
+  .mpd-layout.sidebar-open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 1055;
+    backdrop-filter: blur(2px);
+  }
+
+  .mpd-layout.sidebar-open .mpd-sidebar {
+    display: block;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .mpd-card-img,
+  .mp-card .card-img-top {
+    height: 170px;
+  }
+
+  .mpd-content-header {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mpd-h1 { font-size: 1.1rem; }
+}

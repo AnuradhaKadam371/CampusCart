@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Container, Card, Form, Button, Spinner, Alert, Image } from "react-bootstrap";
 import api from "../utils/api";
 import { AuthContext } from "../context/AuthContext";
-import { createSocket } from "../utils/socket";
+import { getSocket } from "../utils/socket";
 import { upsertConversationMeta, setLastMessageForConversation } from "../utils/chatConversations";
 import { resolveChatPeer } from "../utils/resolveChatPeer";
 import { getImageUrl } from "../utils/imageUrl";
@@ -155,10 +155,14 @@ export function ChatConversation({
   useEffect(() => {
     if (!isAuthenticated || !productId || !otherUserId) return;
 
-    const socket = createSocket();
+    const socket = getSocket();
     socketRef.current = socket;
 
-    socket.emit("join_product_chat", { productId });
+    const joinRoom = () => {
+      socket.emit("join_product_chat", { productId });
+    };
+
+    joinRoom();
 
     const onNew = (msg) => {
       if (String(msg.productId) !== String(productId)) return;
@@ -176,10 +180,11 @@ export function ChatConversation({
     };
 
     socket.on("new_message", onNew);
+    socket.on("connect", joinRoom);
 
     return () => {
       socket.off("new_message", onNew);
-      socket.disconnect();
+      socket.off("connect", joinRoom);
       socketRef.current = null;
     };
   }, [isAuthenticated, myId, otherUserId, productId]);

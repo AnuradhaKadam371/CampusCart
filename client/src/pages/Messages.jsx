@@ -92,7 +92,7 @@ const Messages = () => {
   return (
     <div className="messages-page py-4">
       <div className="messages-shell card border-0 shadow-sm">
-        <div className="messages-panels">
+        <div className={`messages-panels${selected ? " has-chat" : ""}`}>
           <aside className="messages-sidebar border-end">
             <div className="messages-sidebar-header px-3 py-3 border-bottom">
               <h5 className="mb-0">Messages</h5>
