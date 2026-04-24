@@ -251,12 +251,12 @@ exports.withdrawRequest = async (req, res) => {
       });
     }
 
-    // 🔥 IMPORTANT FIX
+    // 🔥 CRITICAL FIX
     const product = await Product.findById(order.productId);
 
-    if (product && product.status === "sold") {
-      // Safety restore (edge case)
-      product.status = "available"; // or remove status field if you don't use it
+    if (product) {
+      // ALWAYS ensure product is available after withdraw
+      product.status = "available";
       product.soldTo = null;
       await product.save();
     }
