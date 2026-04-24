@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        destroySocket();
+        
         dispatch({ type: 'LOGOUT' });
     };
 
