@@ -88,7 +88,7 @@ const Register = () => {
                                         name="name"
                                         value={name}
                                         onChange={onChange}
-                                        placeholder="Alex Rivers"
+                                        placeholder="Ishan Bhosale "
                                         style={inputStyle}
                                         required
                                     />
@@ -97,13 +97,13 @@ const Register = () => {
 
                             <Col md={6}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>University Email</Form.Label>
+                                    <Form.Label>Your Email</Form.Label>
                                     <Form.Control
                                         type="email"
                                         name="email"
                                         value={email}
                                         onChange={onChange}
-                                        placeholder="alex.rivers@university.edu"
+                                        placeholder="ishan@gmail.com"
                                         style={inputStyle}
                                         required
                                     />
