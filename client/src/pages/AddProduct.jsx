@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import AIDescriptionGenerator from '../components/AIDescriptionGenerator';
 import './AddProduct.css';
 
 const AddProduct = () => {
@@ -148,6 +149,22 @@ const AddProduct = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* ========== AI GENERATOR SECTION ========== */}
+                            {preview.length > 0 && (
+                              <div className="form-section">
+                                <AIDescriptionGenerator
+                                  images={images}
+                                  onGeneratedDescription={(result) => {
+                                    setFormData({
+                                      ...formData,
+                                      description: result.description,
+                                      category: result.category
+                                    });
+                                  }}
+                                />
+                              </div>
+                            )}
 
                             {/* ========== DETAILS SECTION ========== */}
                             <div className="form-section">

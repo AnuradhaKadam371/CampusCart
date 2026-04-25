@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const cloudinary = require('../config/cloudinary');
+const axios = require('axios');
 
 // ─── Helper: upload a single file buffer to Cloudinary ──────────────────────
 const uploadToCloudinary = (buffer, mimetype) =>
@@ -192,5 +193,106 @@ exports.getMyProducts = async (req, res) => {
   } catch (err) {
     console.error('getMyProducts:', err);
     res.status(500).json({ msg: 'Server Error' });
+  }
+};
+
+// ============================================================
+// AI DESCRIPTION GENERATOR - HUGGING FACE CONFIG
+// ============================================================
+const HF_API_URL = 'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base';
+const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
+
+const categoryMap = {
+  'book': 'Books',
+  'textbook': 'Books',
+  'novel': 'Books',
+  'phone': 'Electronics',
+  'laptop': 'Electronics',
+  'computer': 'Electronics',
+  'headphone': 'Electronics',
+  'speaker': 'Electronics',
+  'tablet': 'Electronics',
+  'camera': 'Electronics',
+  'shirt': 'Clothing',
+  'pants': 'Clothing',
+  'dress': 'Clothing',
+  'jacket': 'Clothing',
+  'shoe': 'Clothing',
+  'uniform': 'Clothing',
+  'bed': 'Hostel',
+  'chair': 'Hostel',
+  'desk': 'Hostel',
+  'lamp': 'Hostel',
+  'table': 'Hostel',
+  'bedsheet': 'Hostel',
+  'ball': 'Sports',
+  'racket': 'Sports',
+  'bat': 'Sports',
+  'yoga': 'Sports',
+  'cricket': 'Sports',
+  'notebook': 'Stationery',
+  'pen': 'Lab',
+  'microscope': 'Lab',
+  'calculator': 'Lab',
+  'compass': 'Lab',
+};
+
+const detectCategory = (description) => {
+  const lowerDesc = description.toLowerCase();
+  for (const [keyword, category] of Object.entries(categoryMap)) {
+    if (lowerDesc.includes(keyword)) {
+      return category;
+    }
+  }
+  return 'Others';
+};
+
+// ============================================================
+// AI DESCRIPTION GENERATOR FROM BASE64 IMAGE
+// POST /api/products/generate-description
+// ============================================================
+exports.generateDescription = async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ msg: 'imageUrl is required' });
+    }
+
+    if (!HF_API_KEY) {
+      return res.status(500).json({ 
+        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
+        fallback: true
+      });
+    }
+
+    // Call Hugging Face API with the base64 image
+    const response = await axios.post(
+      HF_API_URL,
+      { inputs: imageUrl },
+      { 
+        headers: { 'Authorization': `Bearer ${HF_API_KEY}` },
+        timeout: 45000 
+      }
+    );
+
+    const aiDescription = response.data?.[0]?.generated_text || 'A product image';
+    const suggestedCategory = detectCategory(aiDescription);
+
+    res.json({
+      description: aiDescription,
+      category: suggestedCategory,
+      confidence: 'medium'
+    });
+
+  } catch (err) {
+    console.error('generateDescription error:', err.message);
+    
+    // Graceful fallback
+    res.status(500).json({ 
+      msg: 'Could not generate description. Please write it manually.',
+      error: err.message,
+      fallback: true
+    });
   }
 };

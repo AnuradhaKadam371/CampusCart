@@ -7,7 +7,8 @@ const {
     createProduct,
     deleteProduct,
     getMyProducts,
-    updateProduct
+    updateProduct,
+    generateDescription
 } = require('../controllers/productController');
 
 const auth = require('../middleware/auth');
@@ -46,6 +47,9 @@ router.get('/', getProducts);
 
 // Get my products (auth)
 router.get('/myproducts', auth, getMyProducts);
+
+// AI Description Generator
+router.post('/generate-description', generateDescription);
 
 // Get single product (public)
 router.get('/:id', getProductById);
