@@ -199,7 +199,7 @@ exports.getMyProducts = async (req, res) => {
 // ============================================================
 // AI DESCRIPTION GENERATOR - HUGGING FACE CONFIG
 // ============================================================
-const HF_API_URL = 'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base';
+const HF_API_URL = 'https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning';
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
