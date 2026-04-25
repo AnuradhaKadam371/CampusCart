@@ -186,10 +186,9 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI DESCRIPTION GENERATOR
+// AI DESCRIPTION GENERATOR (FINAL FIXED)
 // ============================================================
 
-const HF_API_URL = 'https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning';
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
@@ -225,24 +224,22 @@ exports.generateDescription = async (req, res) => {
       });
     }
 
-    // ✅ Convert base64 → buffer
+    // 🔥 Convert base64 → buffer
     const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
     const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    // ✅ Send correct request
-    const response = await axios.post(
-      HF_API_URL,
-      imageBuffer,
-      {
-        headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
-          'Content-Type': 'application/octet-stream'
-        },
-        timeout: 45000
-      }
-    );
+    // 🔥 FORCE absolute request (fixes your main bug)
+    const response = await axios({
+      method: "POST",
+      url: "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
+      data: imageBuffer,
+      headers: {
+        Authorization: `Bearer ${HF_API_KEY}`,
+        "Content-Type": "application/octet-stream",
+      },
+      timeout: 45000,
+    });
 
-    // ✅ Handle multiple response formats
     const aiDescription =
       response.data?.[0]?.generated_text ||
       response.data?.[0]?.caption ||
