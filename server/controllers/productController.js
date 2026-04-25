@@ -194,3 +194,98 @@ exports.getMyProducts = async (req, res) => {
     res.status(500).json({ msg: 'Server Error' });
   }
 };
+
+// ============================================================
+// AI PRODUCT DESCRIPTION GENERATOR
+// ============================================================
+const axios = require('axios');
+
+const HF_API_URL = 'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base';
+const HF_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
+
+const categoryMap = {
+  'book': 'Books',
+  'textbook': 'Books',
+  'novel': 'Books',
+  'phone': 'Electronics',
+  'laptop': 'Electronics',
+  'computer': 'Electronics',
+  'headphone': 'Electronics',
+  'speaker': 'Electronics',
+  'tablet': 'Electronics',
+  'camera': 'Electronics',
+  'shirt': 'Clothing',
+  'pants': 'Clothing',
+  'dress': 'Clothing',
+  'jacket': 'Clothing',
+  'shoe': 'Clothing',
+  'uniform': 'Clothing',
+  'bed': 'Hostel',
+  'chair': 'Hostel',
+  'desk': 'Hostel',
+  'lamp': 'Hostel',
+  'table': 'Hostel',
+  'bedsheet': 'Hostel',
+  'ball': 'Sports',
+  'racket': 'Sports',
+  'bat': 'Sports',
+  'yoga': 'Sports',
+  'cricket': 'Sports',
+  'notebook': 'Stationery',
+  'pen': 'Lab',
+  'microscope': 'Lab',
+  'calculator': 'Lab',
+  'compass': 'Lab',
+};
+
+const detectCategory = (description) => {
+  const lowerDesc = description.toLowerCase();
+  for (const [keyword, category] of Object.entries(categoryMap)) {
+    if (lowerDesc.includes(keyword)) {
+      return category;
+    }
+  }
+  return 'Others';
+};
+
+exports.generateDescriptionFromUrl = async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ msg: 'imageUrl is required' });
+    }
+
+    if (!HF_API_KEY) {
+      return res.status(500).json({
+        msg: 'AI service not configured. Add HUGGING_FACE_API_KEY to .env',
+        fallback: true
+      });
+    }
+
+    const response = await axios.post(
+      HF_API_URL,
+      { inputs: imageUrl },
+      {
+        headers: { 'Authorization': `Bearer ${HF_API_KEY}` },
+        timeout: 30000
+      }
+    );
+
+    const aiDescription = response.data?.[0]?.generated_text || 'A product image';
+    const suggestedCategory = detectCategory(aiDescription);
+
+    res.json({
+      description: aiDescription,
+      category: suggestedCategory,
+      confidence: 'medium'
+    });
+
+  } catch (err) {
+    console.error('generateDescription:', err.message);
+    res.status(500).json({
+      msg: 'Could not generate description. Please write manually.',
+      error: err.message
+    });
+  }
+};
