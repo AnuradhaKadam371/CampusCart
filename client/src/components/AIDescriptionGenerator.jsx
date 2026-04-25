@@ -25,7 +25,7 @@ const AIDescriptionGenerator = ({ images, onGeneratedDescription }) => {
         try {
           const base64Data = e.target.result;
 
-          const response = await api.post('/products/generate-description-upload',
+          const response = await api.post('/products/generate-description',
             { imageUrl: base64Data },
             { headers: { 'Content-Type': 'application/json' } }
           );

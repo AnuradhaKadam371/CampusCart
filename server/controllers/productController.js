@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const cloudinary = require('../config/cloudinary');
+const axios = require('axios');
 
 // ─── Helper: upload a single file buffer to Cloudinary ──────────────────────
 const uploadToCloudinary = (buffer, mimetype) =>
@@ -196,12 +197,10 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI PRODUCT DESCRIPTION GENERATOR
+// AI DESCRIPTION GENERATOR - HUGGING FACE CONFIG
 // ============================================================
-const axios = require('axios');
-
 const HF_API_URL = 'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base';
-const HF_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
+const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
   'book': 'Books',
@@ -248,7 +247,11 @@ const detectCategory = (description) => {
   return 'Others';
 };
 
-exports.generateDescriptionFromUrl = async (req, res) => {
+// ============================================================
+// AI DESCRIPTION GENERATOR FROM BASE64 IMAGE
+// POST /api/products/generate-description
+// ============================================================
+exports.generateDescription = async (req, res) => {
   try {
     const { imageUrl } = req.body;
 
@@ -257,18 +260,19 @@ exports.generateDescriptionFromUrl = async (req, res) => {
     }
 
     if (!HF_API_KEY) {
-      return res.status(500).json({
-        msg: 'AI service not configured. Add HUGGING_FACE_API_KEY to .env',
+      return res.status(500).json({ 
+        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
         fallback: true
       });
     }
 
+    // Call Hugging Face API with the base64 image
     const response = await axios.post(
       HF_API_URL,
       { inputs: imageUrl },
-      {
+      { 
         headers: { 'Authorization': `Bearer ${HF_API_KEY}` },
-        timeout: 30000
+        timeout: 45000 
       }
     );
 
@@ -282,10 +286,13 @@ exports.generateDescriptionFromUrl = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('generateDescription:', err.message);
-    res.status(500).json({
-      msg: 'Could not generate description. Please write manually.',
-      error: err.message
+    console.error('generateDescription error:', err.message);
+    
+    // Graceful fallback
+    res.status(500).json({ 
+      msg: 'Could not generate description. Please write it manually.',
+      error: err.message,
+      fallback: true
     });
   }
 };
