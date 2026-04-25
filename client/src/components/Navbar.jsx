@@ -150,19 +150,29 @@ const Navigation = () => {
                                 <Nav.Link
                                     as={Link}
                                     to="/login"
-                                    className={`nav-item ${isActive('/login') ? 'active-nav' : ''}`}
+                                    className="nav-item fw-bold text-dark"
+                                    style={{ padding: '6px 12px !important', textDecoration: 'none' }}
                                 >
                                     Login
                                 </Nav.Link>
 
-                                <Button
+                                <Nav.Link
                                     as={Link}
                                     to="/register"
-                                    variant="primary"
-                                    size="sm"
+                                    className="nav-item fw-bold text-dark"
+                                    style={{ padding: '6px 12px !important', textDecoration: 'none' }}
                                 >
-                                    Get Started
-                                </Button>
+                                    Sign Up
+                                </Nav.Link>
+
+                                <Nav.Link
+                                    as={Link}
+                                    to="/about"
+                                    className="nav-item fw-bold text-dark"
+                                    style={{ padding: '6px 12px !important', textDecoration: 'none' }}
+                                >
+                                    About Us
+                                </Nav.Link>
                             </>
                         ) : (
                             <Button

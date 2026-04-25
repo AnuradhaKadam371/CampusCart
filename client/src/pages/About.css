@@ -1,0 +1,333 @@
+/* =========================================================
+   About Page – Pastel Colors & Layout
+   ========================================================= */
+
+html { scroll-behavior: smooth; }
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0   rgba(99,102,241,0.35); }
+  70%  { box-shadow: 0 0 0 14px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0   rgba(99,102,241,0); }
+}
+
+.about-reveal { animation: revealUp 0.7s cubic-bezier(0.4,0,0.2,1) both; }
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+
+/* =========================================================
+   HERO - Blurred Background
+   ========================================================= */
+.about-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 120px 0 100px;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-align: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65); /* Dark overlay */
+  backdrop-filter: blur(8px); /* The requested blur effect */
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1;
+}
+
+.about-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 20px;
+  border-radius: 100px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.about-hero h1 {
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+
+.about-hero p.lead {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: rgba(255,255,255,0.9);
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+
+.hero-cta-group {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-hero-primary {
+  padding: 14px 34px;
+  border-radius: 100px;
+  font-weight: 700;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  text-decoration: none;
+  transition: all 0.25s;
+  box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+}
+.btn-hero-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(59,130,246,0.4);
+  color: #fff;
+}
+
+.btn-hero-outline {
+  padding: 14px 34px;
+  border-radius: 100px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.5);
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: all 0.25s;
+}
+.btn-hero-outline:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: #fff;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.8;
+  z-index: 2;
+}
+.scroll-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+.scroll-dot:nth-child(2) { animation: pulseRing 1.5s ease infinite 0.3s; width: 8px; height: 8px; }
+
+/* =========================================================
+   SECTIONS & PASTEL COLORS
+   ========================================================= */
+.about-section {
+  padding: 80px 0;
+}
+.bg-pastel { background-color: #E3F2FD; } /* Light Blue Pastel */
+.bg-pastel-alt { background-color: #EDE7F6; } /* Soft Lavender Pastel */
+.stats-section { background-color: #E0F7FA; } /* Light Teal Pastel */
+
+.section-inner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 18px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.badge-blue     { background: #1565C0; color: #fff; }
+.badge-lavender { background: #6A1B9A; color: #fff; }
+.badge-teal     { background: #00838F; color: #fff; }
+
+.section-title {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.section-sub {
+  color: #475569;
+  font-size: 1.05rem;
+  max-width: 560px;
+}
+
+/* =========================================================
+   FEATURES GRID (5 Items)
+   ========================================================= */
+.features-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 50px;
+}
+
+.feat-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 24px;
+  width: calc(33.333% - 16px);
+  min-width: 280px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+  transition: transform 0.25s, box-shadow 0.25s;
+  cursor: default;
+}
+.feat-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(21, 101, 192, 0.1);
+}
+
+.feat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+.fi-blue     { background: #E3F2FD; color: #1565C0; }
+.fi-lavender { background: #EDE7F6; color: #6A1B9A; }
+.fi-teal     { background: #E0F7FA; color: #006064; }
+
+.feat-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+.feat-desc  { font-size: 0.9rem; color: #64748b; line-height: 1.6; }
+
+/* =========================================================
+   STATS BOXES
+   ========================================================= */
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+}
+
+.stat-box {
+  background: #fff;
+  border-radius: 24px;
+  padding: 40px 30px;
+  flex: 1;
+  min-width: 250px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  transition: transform 0.3s;
+}
+.stat-box:hover {
+  transform: translateY(-6px);
+}
+
+.stat-box-icon { font-size: 2.4rem; margin-bottom: 16px; }
+.sb-blue     .stat-box-icon { color: #1565C0; }
+.sb-lavender .stat-box-icon { color: #6A1B9A; }
+.sb-teal     .stat-box-icon { color: #00838F; }
+
+.stat-value {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+.stat-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* =========================================================
+   WHY CHOOSE US (4 Items)
+   ========================================================= */
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.why-card {
+  border-radius: 20px;
+  padding: 30px 26px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+  transition: transform 0.22s, box-shadow 0.22s;
+}
+.why-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(106, 27, 154, 0.1);
+}
+
+.why-check {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.why-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+.why-desc  { font-size: 0.95rem; color: #64748b; line-height: 1.6; }
+
+/* =========================================================
+   CTA BANNER
+   ========================================================= */
+.cta-banner {
+  background: #1565C0;
+  border-radius: 24px;
+  padding: 60px 40px;
+  text-align: center;
+  color: #fff;
+  margin-top: 40px;
+}
+
+.cta-banner h2 { font-size: 2.2rem; font-weight: 900; margin-bottom: 12px; }
+.cta-banner p  { opacity: 0.9; font-size: 1.1rem; margin-bottom: 30px; }
+
+.btn-cta {
+  padding: 16px 40px;
+  border-radius: 100px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  background: #fff;
+  color: #1565C0;
+  border: none;
+  text-decoration: none;
+  transition: all 0.25s;
+}
+.btn-cta:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  color: #1565C0;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 992px) {
+  .feat-card { width: calc(50% - 12px); }
+}
+@media (max-width: 768px) {
+  .feat-card { width: 100%; }
+  .why-grid { grid-template-columns: 1fr; }
+  .about-hero { padding: 80px 0 60px; }
+}
