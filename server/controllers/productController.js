@@ -186,20 +186,58 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI DESCRIPTION GENERATOR (FINAL FIXED)
+// AI DESCRIPTION GENERATOR
 // ============================================================
-
+// NOTE: The old api-inference.huggingface.co endpoint has been deprecated.
+// Using the new router.huggingface.co with Together provider + Kimi-K2.6 VLM.
+const HF_VLM_URL = 'https://router.huggingface.co/together/v1/chat/completions';
+const HF_VLM_MODEL = 'moonshotai/Kimi-K2.6';
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
-  book: 'Books',
-  phone: 'Electronics',
-  laptop: 'Electronics',
-  shirt: 'Clothing',
-  chair: 'Hostel',
-  ball: 'Sports',
-  notebook: 'Stationery',
-  microscope: 'Lab',
+  'book': 'Books',
+  'textbook': 'Books',
+  'novel': 'Books',
+  'phone': 'Electronics',
+  'laptop': 'Electronics',
+  'computer': 'Electronics',
+  'headphone': 'Electronics',
+  'speaker': 'Electronics',
+  'tablet': 'Electronics',
+  'camera': 'Electronics',
+  'earphone': 'Electronics',
+  'earbuds': 'Electronics',
+  'charger': 'Electronics',
+  'keyboard': 'Electronics',
+  'mouse': 'Electronics',
+  'monitor': 'Electronics',
+  'shirt': 'Clothing',
+  'pants': 'Clothing',
+  'dress': 'Clothing',
+  'jacket': 'Clothing',
+  'shoe': 'Clothing',
+  'uniform': 'Clothing',
+  'hoodie': 'Clothing',
+  'bed': 'Hostel',
+  'chair': 'Hostel',
+  'desk': 'Hostel',
+  'lamp': 'Hostel',
+  'table': 'Hostel',
+  'bedsheet': 'Hostel',
+  'pillow': 'Hostel',
+  'mattress': 'Hostel',
+  'ball': 'Sports',
+  'racket': 'Sports',
+  'bat': 'Sports',
+  'yoga': 'Sports',
+  'cricket': 'Sports',
+  'football': 'Sports',
+  'badminton': 'Sports',
+  'notebook': 'Stationery',
+  'pen': 'Lab',
+  'microscope': 'Lab',
+  'calculator': 'Lab',
+  'compass': 'Lab',
 };
 
 const detectCategory = (description) => {
@@ -220,59 +258,50 @@ exports.generateDescription = async (req, res) => {
 
     if (!HF_API_KEY) {
       return res.status(500).json({
-        msg: 'Missing Hugging Face API key'
+        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
+        fallback: true
       });
     }
 
-    // Convert base64 data URL to raw binary buffer
-    // Format: "data:image/jpeg;base64,/9j/4AAQ..."
-    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-
-    // Detect MIME type from data URL
-    const mimeMatch = imageUrl.match(/^data:(image\/\w+);base64,/);
-    const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-
-    // Call Hugging Face API with raw binary image data
+    // Call the VLM via OpenAI-compatible chat completions API
+    // The base64 data URL is passed directly as an image_url in the message
     const response = await axios.post(
-      HF_API_URL,
-      imageBuffer,
+      HF_VLM_URL,
+      {
+        model: HF_VLM_MODEL,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'You are a helpful assistant for a campus marketplace called CampusCart. Describe this product image in 1-2 concise sentences suitable for a product listing. Focus on the item type, color, condition, and key features. Be direct and practical — no flowery language. Do not include any reasoning or thinking.'
+              },
+              {
+                type: 'image_url',
+                image_url: { url: imageUrl }
+              }
+            ]
+          }
+        ],
+        max_tokens: 300
+      },
       { 
         headers: { 
           'Authorization': `Bearer ${HF_API_KEY}`,
-          'Content-Type': contentType
+          'Content-Type': 'application/json'
         },
-        timeout: 60000,
-        maxContentLength: 10 * 1024 * 1024,
-        maxBodyLength: 10 * 1024 * 1024
+        timeout: 60000
       }
     );
-    // 🔥 Convert base64 → buffer
-    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    // 🔥 FORCE absolute request (fixes your main bug)
-    const response = await axios({
-      method: "POST",
-      url: "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
-      data: imageBuffer,
-      headers: {
-        Authorization: `Bearer ${HF_API_KEY}`,
-        "Content-Type": "application/octet-stream",
-      },
-      timeout: 45000,
-    });
-
-    const aiDescription =
-      response.data?.[0]?.generated_text ||
-      response.data?.[0]?.caption ||
-      'A product image';
-
-    const category = detectCategory(aiDescription);
+    const choice = response.data?.choices?.[0]?.message;
+    const aiDescription = (choice?.content || '').trim() || 'A product image';
+    const suggestedCategory = detectCategory(aiDescription);
 
     res.json({
       description: aiDescription,
-      category,
+      category: suggestedCategory,
       confidence: 'high'
     });
 
@@ -291,7 +320,7 @@ exports.generateDescription = async (req, res) => {
     // Graceful fallback
     res.status(500).json({ 
       msg: 'AI generation failed',
-      error: err.response?.data?.error || err.message,
+      error: err.response?.data?.error?.message || err.response?.data?.error || err.message,
       fallback: true
     });
   }
