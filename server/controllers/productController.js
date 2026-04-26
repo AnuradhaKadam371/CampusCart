@@ -234,11 +234,12 @@ exports.generateDescription = async (req, res) => {
       url: "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
       data: imageBuffer,
       headers: {
-        Authorization: `Bearer ${HF_API_KEY}`,
-        "Content-Type": "application/octet-stream",
-        "x-wait-for-model": "true"
-      },
-      timeout: 45000,
+      Authorization: `Bearer ${HF_API_KEY}`,
+      "Content-Type": "application/octet-stream",
+      "Accept": "application/json",
+      "x-wait-for-model": "true"
+    },
+      timeout:   45000,
     });
 
     const aiDescription =
