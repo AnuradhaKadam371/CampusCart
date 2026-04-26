@@ -249,18 +249,17 @@ exports.generateDescription = async (req, res) => {
     const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
     const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    const response = await axios({
-      method: 'POST',
-      url: 'https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning',
-      data: imageBuffer,
-      headers: {
-        Authorization: `Bearer ${HF_API_KEY}`,
-        'Content-Type': 'application/octet-stream',
-        Accept: 'application/json',
-        'x-wait-for-model': 'true'
-      },
-      timeout: 45000
-    });
+   const response = await axios.post(
+  "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base",
+  imageBuffer,
+  {
+    headers: {
+      Authorization: `Bearer ${HF_API_KEY}`,
+      "Content-Type": "application/octet-stream"
+    },
+    timeout: 45000
+  }
+);
 
     // ✅ FIXED: only ONE aiDescription (no duplicates)
     const aiDescription =
