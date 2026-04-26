@@ -236,6 +236,7 @@ exports.generateDescription = async (req, res) => {
       headers: {
         Authorization: `Bearer ${HF_API_KEY}`,
         "Content-Type": "application/octet-stream",
+        "x-wait-for-model": "true"
       },
       timeout: 45000,
     });
@@ -256,8 +257,20 @@ exports.generateDescription = async (req, res) => {
   } catch (err) {
     console.error('🔥 HF ERROR:', err.response?.data || err.message);
 
+    // Provide a more descriptive error message to the frontend
+    let errorMessage = 'AI generation failed. Please try again.';
+    const hfData = err.response?.data;
+    
+    if (hfData) {
+      if (typeof hfData.error === 'string') {
+        errorMessage = hfData.error; // e.g. "Model is currently loading"
+      } else if (hfData.msg) {
+        errorMessage = hfData.msg;
+      }
+    }
+
     res.status(500).json({
-      msg: 'AI generation failed',
+      msg: errorMessage,
       error: err.response?.data || err.message
     });
   }
