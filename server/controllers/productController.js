@@ -263,37 +263,28 @@ exports.generateDescription = async (req, res) => {
       });
     }
 
-    // Call the VLM via OpenAI-compatible chat completions API
-    // The base64 data URL is passed directly as an image_url in the message
-    const response = await axios.post(
-      HF_VLM_URL,
-      {
-        model: HF_VLM_MODEL,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'You are a helpful assistant for a campus marketplace called CampusCart. Describe this product image in 1-2 concise sentences suitable for a product listing. Focus on the item type, color, condition, and key features. Be direct and practical — no flowery language. Do not include any reasoning or thinking.'
-              },
-              {
-                type: 'image_url',
-                image_url: { url: imageUrl }
-              }
-            ]
-          }
-        ],
-        max_tokens: 300
-      },
-      { 
-        headers: { 
-          'Authorization': `Bearer ${HF_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      }
-    );
+    // 🔥 Convert base64 → buffer
+    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    // 🔥 FORCE absolute request (fixes your main bug)
+    const response = await axios({
+      method: "POST",
+      url: "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
+      data: imageBuffer,
+      headers: {
+      Authorization: `Bearer ${HF_API_KEY}`,
+      "Content-Type": "application/octet-stream",
+      "Accept": "application/json",
+      "x-wait-for-model": "true"
+    },
+      timeout:   45000,
+    });
+
+    const aiDescription =
+      response.data?.[0]?.generated_text ||
+      response.data?.[0]?.caption ||
+      'A product image';
 
     const choice = response.data?.choices?.[0]?.message;
     const aiDescription = (choice?.content || '').trim() || 'A product image';
@@ -322,6 +313,21 @@ exports.generateDescription = async (req, res) => {
       msg: 'AI generation failed',
       error: err.response?.data?.error?.message || err.response?.data?.error || err.message,
       fallback: true
+    // Provide a more descriptive error message to the frontend
+    let errorMessage = 'AI generation failed. Please try again.';
+    const hfData = err.response?.data;
+    
+    if (hfData) {
+      if (typeof hfData.error === 'string') {
+        errorMessage = hfData.error; // e.g. "Model is currently loading"
+      } else if (hfData.msg) {
+        errorMessage = hfData.msg;
+      }
+    }
+
+    res.status(500).json({
+      msg: errorMessage,
+      error: err.response?.data || err.message
     });
   }
 };
