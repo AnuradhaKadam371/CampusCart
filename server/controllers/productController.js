@@ -186,58 +186,20 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI DESCRIPTION GENERATOR
+// AI DESCRIPTION GENERATOR (FINAL FIXED)
 // ============================================================
-// NOTE: The old api-inference.huggingface.co endpoint has been deprecated.
-// Using the new router.huggingface.co with Together provider + Kimi-K2.6 VLM.
-const HF_VLM_URL = 'https://router.huggingface.co/together/v1/chat/completions';
-const HF_VLM_MODEL = 'moonshotai/Kimi-K2.6';
+
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
-  'book': 'Books',
-  'textbook': 'Books',
-  'novel': 'Books',
-  'phone': 'Electronics',
-  'laptop': 'Electronics',
-  'computer': 'Electronics',
-  'headphone': 'Electronics',
-  'speaker': 'Electronics',
-  'tablet': 'Electronics',
-  'camera': 'Electronics',
-  'earphone': 'Electronics',
-  'earbuds': 'Electronics',
-  'charger': 'Electronics',
-  'keyboard': 'Electronics',
-  'mouse': 'Electronics',
-  'monitor': 'Electronics',
-  'shirt': 'Clothing',
-  'pants': 'Clothing',
-  'dress': 'Clothing',
-  'jacket': 'Clothing',
-  'shoe': 'Clothing',
-  'uniform': 'Clothing',
-  'hoodie': 'Clothing',
-  'bed': 'Hostel',
-  'chair': 'Hostel',
-  'desk': 'Hostel',
-  'lamp': 'Hostel',
-  'table': 'Hostel',
-  'bedsheet': 'Hostel',
-  'pillow': 'Hostel',
-  'mattress': 'Hostel',
-  'ball': 'Sports',
-  'racket': 'Sports',
-  'bat': 'Sports',
-  'yoga': 'Sports',
-  'cricket': 'Sports',
-  'football': 'Sports',
-  'badminton': 'Sports',
-  'notebook': 'Stationery',
-  'pen': 'Lab',
-  'microscope': 'Lab',
-  'calculator': 'Lab',
-  'compass': 'Lab',
+  book: 'Books',
+  phone: 'Electronics',
+  laptop: 'Electronics',
+  shirt: 'Clothing',
+  chair: 'Hostel',
+  ball: 'Sports',
+  notebook: 'Stationery',
+  microscope: 'Lab',
 };
 
 const detectCategory = (description) => {
@@ -258,8 +220,7 @@ exports.generateDescription = async (req, res) => {
 
     if (!HF_API_KEY) {
       return res.status(500).json({
-        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
-        fallback: true
+        msg: 'Missing Hugging Face API key'
       });
     }
 
@@ -286,33 +247,17 @@ exports.generateDescription = async (req, res) => {
       response.data?.[0]?.caption ||
       'A product image';
 
-    const choice = response.data?.choices?.[0]?.message;
-    const aiDescription = (choice?.content || '').trim() || 'A product image';
-    const suggestedCategory = detectCategory(aiDescription);
+    const category = detectCategory(aiDescription);
 
     res.json({
       description: aiDescription,
-      category: suggestedCategory,
+      category,
       confidence: 'high'
     });
 
   } catch (err) {
-    console.error('generateDescription error:', err.response?.data || err.message);
-    
-    // Check if model is loading (common with free HF API)
-    if (err.response?.status === 503) {
-      return res.status(503).json({ 
-        msg: 'AI model is loading, please try again in ~20 seconds.',
-        error: 'Model loading',
-        fallback: true
-      });
-    }
+    console.error('🔥 HF ERROR:', err.response?.data || err.message);
 
-    // Graceful fallback
-    res.status(500).json({ 
-      msg: 'AI generation failed',
-      error: err.response?.data?.error?.message || err.response?.data?.error || err.message,
-      fallback: true
     // Provide a more descriptive error message to the frontend
     let errorMessage = 'AI generation failed. Please try again.';
     const hfData = err.response?.data;
