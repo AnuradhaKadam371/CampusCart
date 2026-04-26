@@ -169,13 +169,13 @@ const Login = () => {
 
                         {/* Email */}
                         <Form.Group className="mb-3">
-                            <Form.Label>University Email</Form.Label>
+                            <Form.Label>Your Email</Form.Label>
                             <Form.Control
                                 type="email"
                                 name="email"
                                 value={email}
                                 onChange={onChange}
-                                placeholder="name@university.edu"
+                                placeholder="name@gmail.com"
                                 style={inputStyle}
                                 required
                             />
@@ -213,7 +213,7 @@ const Login = () => {
                                         cursor: "pointer"
                                     }}
                                 >
-                                    {showPassword ? "🙈" : "👁️"}
+                                    {showPassword ? <i class="fa-solid fa-eye-slash"></i> : "👁️"}
                                 </span>
                             </div>
                         </Form.Group>
