@@ -52,6 +52,8 @@ connectDB();
 // ==========================
 app.use(cors(corsOptions)); // handles preflight OPTIONS automatically
 app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // ==========================
 // Health Route
@@ -66,9 +68,26 @@ app.get("/", (req, res) => {
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
-    app.use("/api/admin", require("./routes/admin"));
+app.use("/api/admin", require("./routes/admin"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 app.use("/api/reports", require("./routes/reportRoutes"));
+
+// ==========================
+// Public General Routes
+// ==========================
+app.get("/api/public/stats", async (req, res) => {
+    try {
+        const [totalUsers, totalProducts, totalOrders] = await Promise.all([
+            require("./models/User").countDocuments({ isAdmin: false }),
+            require("./models/Product").countDocuments({}),
+            require("./models/Order").countDocuments({})
+        ]);
+        res.json({ totalUsers, totalProducts, totalOrders });
+    } catch (err) {
+        console.error("Public stats error:", err.message);
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
 
 
 // ==========================

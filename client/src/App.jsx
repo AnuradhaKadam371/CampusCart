@@ -23,6 +23,7 @@ import BuyerRequests from "./pages/BuyerRequests";
 import SellerRequests from "./pages/SellerRequests";
 import MyRequests from "./pages/MyRequests";
 import AcceptRequest from "./pages/AcceptRequest";
+import About from "./pages/About";
 function App() {
   return (
     <AuthProvider>
@@ -38,6 +39,16 @@ function App() {
           </Route>
 
           <Route path="/" element={<Splash />} />
+
+          <Route
+            path="/about"
+            element={
+              <>
+                <Navigation />
+                <About />
+              </>
+            }
+          />
 
           <Route
             path="/home"

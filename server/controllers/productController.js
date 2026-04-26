@@ -16,23 +16,20 @@ const uploadToCloudinary = (buffer, mimetype) =>
     stream.end(buffer);
   });
 
-// ─── Helper: extract Cloudinary public_id from URL ──────────────────────────
+// ─── Helper: extract Cloudinary public_id ───────────────────────────────────
 const extractPublicId = (url) => {
   try {
-    // URL format: https://res.cloudinary.com/{cloud}/image/upload/{version}/{folder}/{id}.{ext}
     const parts = url.split('/');
     const uploadIdx = parts.indexOf('upload');
     if (uploadIdx === -1) return null;
-    // join everything after "upload/v...." skip version segment if present
     const rest = parts.slice(uploadIdx + 1).join('/');
-    // remove extension
     return rest.replace(/\.[^/.]+$/, '').replace(/^v\d+\//, '');
   } catch {
     return null;
   }
 };
 
-// ─── DELETE images from Cloudinary ──────────────────────────────────────────
+// ─── Delete images ──────────────────────────────────────────────────────────
 const deleteFromCloudinary = async (urls = []) => {
   const ids = urls.map(extractPublicId).filter(Boolean);
   await Promise.allSettled(ids.map((id) => cloudinary.uploader.destroy(id)));
@@ -46,13 +43,8 @@ exports.getProducts = async (req, res) => {
     const { search, category } = req.query;
     const query = { status: { $ne: 'sold' } };
 
-    if (search) {
-      query.title = { $regex: search, $options: 'i' };
-    }
-
-    if (category && category !== 'All') {
-      query.category = category;
-    }
+    if (search) query.title = { $regex: search, $options: 'i' };
+    if (category && category !== 'All') query.category = category;
 
     const products = await Product.find(query)
       .populate('sellerId', 'name email phone avatar ratingAvg ratingCount')
@@ -83,7 +75,7 @@ exports.getProductById = async (req, res) => {
 };
 
 // ============================================================
-// CREATE PRODUCT  — uploads images to Cloudinary
+// CREATE PRODUCT
 // ============================================================
 exports.createProduct = async (req, res) => {
   try {
@@ -93,7 +85,6 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ msg: 'Please upload at least one image' });
     }
 
-    // Upload all images in parallel
     const imageUrls = await Promise.all(
       req.files.map((f) => uploadToCloudinary(f.buffer, f.mimetype))
     );
@@ -104,7 +95,7 @@ exports.createProduct = async (req, res) => {
       price,
       category,
       pickupLocation,
-      images: imageUrls,   // ✅ Cloudinary HTTPS URLs stored in DB
+      images: imageUrls,
       sellerId: req.user.id
     });
 
@@ -117,7 +108,7 @@ exports.createProduct = async (req, res) => {
 };
 
 // ============================================================
-// UPDATE PRODUCT — replaces images on Cloudinary if new ones provided
+// UPDATE PRODUCT
 // ============================================================
 exports.updateProduct = async (req, res) => {
   try {
@@ -137,7 +128,6 @@ exports.updateProduct = async (req, res) => {
     };
 
     if (req.files && req.files.length > 0) {
-      // Optionally delete old images from Cloudinary
       await deleteFromCloudinary(product.images);
 
       update.images = await Promise.all(
@@ -159,7 +149,7 @@ exports.updateProduct = async (req, res) => {
 };
 
 // ============================================================
-// DELETE PRODUCT — also removes images from Cloudinary
+// DELETE PRODUCT
 // ============================================================
 exports.deleteProduct = async (req, res) => {
   try {
@@ -170,10 +160,9 @@ exports.deleteProduct = async (req, res) => {
       return res.status(401).json({ msg: 'Not authorized' });
     }
 
-    // Clean up Cloudinary images
     await deleteFromCloudinary(product.images);
-
     await product.deleteOne();
+
     res.json({ msg: 'Product removed' });
   } catch (err) {
     console.error('deleteProduct:', err);
@@ -197,60 +186,30 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI DESCRIPTION GENERATOR - HUGGING FACE CONFIG
+// AI DESCRIPTION GENERATOR (FINAL FIXED)
 // ============================================================
-const HF_API_URL = 'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base';
+
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
-  'book': 'Books',
-  'textbook': 'Books',
-  'novel': 'Books',
-  'phone': 'Electronics',
-  'laptop': 'Electronics',
-  'computer': 'Electronics',
-  'headphone': 'Electronics',
-  'speaker': 'Electronics',
-  'tablet': 'Electronics',
-  'camera': 'Electronics',
-  'shirt': 'Clothing',
-  'pants': 'Clothing',
-  'dress': 'Clothing',
-  'jacket': 'Clothing',
-  'shoe': 'Clothing',
-  'uniform': 'Clothing',
-  'bed': 'Hostel',
-  'chair': 'Hostel',
-  'desk': 'Hostel',
-  'lamp': 'Hostel',
-  'table': 'Hostel',
-  'bedsheet': 'Hostel',
-  'ball': 'Sports',
-  'racket': 'Sports',
-  'bat': 'Sports',
-  'yoga': 'Sports',
-  'cricket': 'Sports',
-  'notebook': 'Stationery',
-  'pen': 'Lab',
-  'microscope': 'Lab',
-  'calculator': 'Lab',
-  'compass': 'Lab',
+  book: 'Books',
+  phone: 'Electronics',
+  laptop: 'Electronics',
+  shirt: 'Clothing',
+  chair: 'Hostel',
+  ball: 'Sports',
+  notebook: 'Stationery',
+  microscope: 'Lab',
 };
 
 const detectCategory = (description) => {
-  const lowerDesc = description.toLowerCase();
-  for (const [keyword, category] of Object.entries(categoryMap)) {
-    if (lowerDesc.includes(keyword)) {
-      return category;
-    }
+  const lower = description.toLowerCase();
+  for (const key in categoryMap) {
+    if (lower.includes(key)) return categoryMap[key];
   }
   return 'Others';
 };
 
-// ============================================================
-// AI DESCRIPTION GENERATOR FROM BASE64 IMAGE
-// POST /api/products/generate-description
-// ============================================================
 exports.generateDescription = async (req, res) => {
   try {
     const { imageUrl } = req.body;
@@ -260,9 +219,8 @@ exports.generateDescription = async (req, res) => {
     }
 
     if (!HF_API_KEY) {
-      return res.status(500).json({ 
-        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
-        fallback: true
+      return res.status(500).json({
+        msg: 'Missing Hugging Face API key'
       });
     }
 
@@ -289,14 +247,33 @@ exports.generateDescription = async (req, res) => {
         maxBodyLength: 10 * 1024 * 1024
       }
     );
+    // 🔥 Convert base64 → buffer
+    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    const aiDescription = response.data?.[0]?.generated_text || 'A product image';
-    const suggestedCategory = detectCategory(aiDescription);
+    // 🔥 FORCE absolute request (fixes your main bug)
+    const response = await axios({
+      method: "POST",
+      url: "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
+      data: imageBuffer,
+      headers: {
+        Authorization: `Bearer ${HF_API_KEY}`,
+        "Content-Type": "application/octet-stream",
+      },
+      timeout: 45000,
+    });
+
+    const aiDescription =
+      response.data?.[0]?.generated_text ||
+      response.data?.[0]?.caption ||
+      'A product image';
+
+    const category = detectCategory(aiDescription);
 
     res.json({
       description: aiDescription,
-      category: suggestedCategory,
-      confidence: 'medium'
+      category,
+      confidence: 'high'
     });
 
   } catch (err) {

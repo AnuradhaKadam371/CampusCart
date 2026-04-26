@@ -69,3 +69,22 @@
     font-weight: 500;
   }
 }
+
+/* Match Splash 'Get Started' Button */
+.nav-signup-btn {
+  padding: 8px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background-color: #2563eb;
+  border: none;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+}
+
+.nav-signup-btn:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+  color: #fff;
+}
