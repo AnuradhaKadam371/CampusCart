@@ -204,89 +204,170 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI DESCRIPTION GENERATOR (STABLE VERSION - NO 500 CRASH)
+// AI DESCRIPTION GENERATOR — IMPROVED
 // ============================================================
-
+// The old api-inference.huggingface.co is deprecated (returns 404).
+// Using the new HF Router with Kimi VLM for high-quality descriptions.
+// Primary: Kimi-K2.5 (faster) | Fallback: Kimi-K2.6
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
+const HF_PROVIDERS = [
+  { url: 'https://router.huggingface.co/together/v1/chat/completions', model: 'moonshotai/Kimi-K2.5', name: 'together/K2.5' },
+  { url: 'https://router.huggingface.co/together/v1/chat/completions', model: 'moonshotai/Kimi-K2.6', name: 'together/K2.6' },
+];
+
+// ── Expanded category map for campus products ─────────────────
 const categoryMap = {
-  book: 'Books',
-  laptop: 'Electronics',
-  phone: 'Electronics',
-  shirt: 'Clothing',
-  shoe: 'Clothing',
-  bed: 'Hostel',
-  chair: 'Hostel',
-  racket: 'Sports',
-  bat: 'Sports',
-  notebook: 'Stationery',
-  pen: 'Lab'
+  // Books
+  'book': 'Books', 'textbook': 'Books', 'novel': 'Books',
+  'guide': 'Books', 'manual': 'Books', 'edition': 'Books',
+  // Electronics
+  'phone': 'Electronics', 'laptop': 'Electronics', 'computer': 'Electronics',
+  'headphone': 'Electronics', 'headphones': 'Electronics',
+  'speaker': 'Electronics', 'tablet': 'Electronics', 'camera': 'Electronics',
+  'earphone': 'Electronics', 'earbuds': 'Electronics', 'charger': 'Electronics',
+  'keyboard': 'Electronics', 'mouse': 'Electronics', 'monitor': 'Electronics',
+  'mobile': 'Electronics', 'iphone': 'Electronics', 'samsung': 'Electronics',
+  'adapter': 'Electronics', 'cable': 'Electronics', 'usb': 'Electronics',
+  // Clothing
+  'shirt': 'Clothing', 'pants': 'Clothing', 'jeans': 'Clothing',
+  'dress': 'Clothing', 'jacket': 'Clothing', 'coat': 'Clothing',
+  'shoe': 'Clothing', 'shoes': 'Clothing', 'uniform': 'Clothing',
+  'hoodie': 'Clothing', 'saree': 'Clothing', 'kurta': 'Clothing',
+  // Hostel
+  'bed': 'Hostel', 'chair': 'Hostel', 'desk': 'Hostel',
+  'lamp': 'Hostel', 'table': 'Hostel', 'bedsheet': 'Hostel',
+  'pillow': 'Hostel', 'mattress': 'Hostel', 'cushion': 'Hostel',
+  // Sports
+  'ball': 'Sports', 'racket': 'Sports', 'bat': 'Sports',
+  'yoga': 'Sports', 'cricket': 'Sports', 'football': 'Sports',
+  'badminton': 'Sports', 'bicycle': 'Sports', 'skateboard': 'Sports',
+  // Stationery
+  'notebook': 'Stationery', 'pen': 'Stationery', 'pencil': 'Stationery',
+  'paper': 'Stationery', 'ruler': 'Stationery', 'eraser': 'Stationery',
+  // Lab
+  'microscope': 'Lab', 'calculator': 'Lab', 'compass': 'Lab',
+  'scale': 'Lab', 'beaker': 'Lab', 'flask': 'Lab',
 };
 
-const detectCategory = (text = '') => {
-  const lower = text.toLowerCase();
+const detectCategory = (description) => {
+  const lower = description.toLowerCase();
   for (const key in categoryMap) {
     if (lower.includes(key)) return categoryMap[key];
   }
   return 'Others';
 };
 
+// ── VLM prompt engineered for campus marketplace descriptions ──
+const VLM_PROMPT = `You are writing a product listing for CampusCart, a college campus marketplace where students buy and sell used items.
+
+Look at this image and write a 1-2 sentence product description. Include:
+- What the item is (be specific — e.g. "GATE exam preparation book" not just "a book")
+- Color or appearance
+- Apparent condition (new, used, good condition, slightly worn, etc.)
+- Brand name if visible
+- Any notable features
+
+Examples of GOOD descriptions:
+- "Used GATE exam preparation book by Made Easy, in good condition with some highlighting on pages."
+- "Black Sony WH-1000XM4 wireless headphones with carrying case, lightly used."
+- "Blue denim jeans, waist 32, barely worn, no stains or tears."
+
+Be specific and helpful. Do NOT say "a product image" or anything generic. Do NOT include any reasoning, thinking, or explanation — just the description.`;
+
+// ── Call VLM with fallback across providers ─────────────────────
+async function callVLM(imageUrl) {
+  let lastError = null;
+
+  for (const provider of HF_PROVIDERS) {
+    try {
+      console.log(`[AI] Trying ${provider.name}...`);
+      const response = await axios.post(
+        provider.url,
+        {
+          model: provider.model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: VLM_PROMPT },
+                { type: 'image_url', image_url: { url: imageUrl } }
+              ]
+            }
+          ],
+          // Kimi is a thinking model: uses ~500-1000 tokens on reasoning
+          // before generating content. Must be high enough for both.
+          max_tokens: 2000
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${HF_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 60000
+        }
+      );
+
+      const content = (response.data?.choices?.[0]?.message?.content || '').trim();
+
+      // Reject generic / empty descriptions — try next provider
+      if (!content || content.length < 10 || /^a product/i.test(content)) {
+        throw new Error('Description too generic, trying next provider');
+      }
+
+      console.log(`[AI] ${provider.name} succeeded: "${content.substring(0, 80)}..."`);
+      return { description: content, provider: provider.name };
+    } catch (err) {
+      console.warn(`[AI] ${provider.name} failed:`, err.response?.data?.error || err.message);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('All providers failed');
+}
+
+// ============================================================
+// POST /api/products/generate-description
+// ============================================================
 exports.generateDescription = async (req, res) => {
   try {
     const { imageUrl } = req.body;
 
     if (!imageUrl) {
-      return res.status(400).json({ msg: 'imageUrl required' });
+      return res.status(400).json({ msg: 'imageUrl is required' });
     }
 
-    // fallback safe parsing
-    const base64 = imageUrl.includes('base64')
-      ? imageUrl.replace(/^data:image\/\w+;base64,/, '')
-      : null;
-
-    if (!base64) {
-      return res.status(400).json({ msg: 'Invalid image format' });
+    if (!HF_API_KEY) {
+      return res.status(500).json({
+        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
+        fallback: true
+      });
     }
 
-    const imageBuffer = Buffer.from(base64, 'base64');
+    const { description, provider } = await callVLM(imageUrl);
+    const suggestedCategory = detectCategory(description);
 
-    let aiDescription = '';
-
-    try {
-      const response = await axios.post(
-        'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base',
-        imageBuffer,
-        {
-          headers: {
-            Authorization: `Bearer ${HF_API_KEY}`,
-            'Content-Type': 'application/octet-stream'
-          },
-          timeout: 30000
-        }
-      );
-
-      aiDescription =
-        response.data?.generated_text ||
-        response.data?.[0]?.generated_text ||
-        response.data?.caption ||
-        'A product image';
-
-    } catch (aiErr) {
-      console.log('AI fallback triggered:', aiErr.message);
-      aiDescription = 'A product image';
-    }
-
-    return res.json({
-      description: aiDescription,
-      category: detectCategory(aiDescription),
-      confidence: 'low'
+    res.json({
+      description,
+      category: suggestedCategory,
+      confidence: 'high',
+      model: provider
     });
 
   } catch (err) {
-    console.error('generateDescription error:', err.message);
+    console.error('generateDescription error:', err.response?.data || err.message);
 
-    return res.status(500).json({
-      msg: 'Server handled error safely',
+    if (err.response?.status === 503) {
+      return res.status(503).json({
+        msg: 'AI model is loading, please try again in ~20 seconds.',
+        error: 'Model loading',
+        fallback: true
+      });
+    }
+
+    res.status(500).json({
+      msg: 'Could not generate description. Please write it manually.',
+      error: err.response?.data?.error?.message || err.response?.data?.error || err.message,
       fallback: true
     });
   }
