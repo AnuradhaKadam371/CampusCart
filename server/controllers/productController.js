@@ -6,6 +6,7 @@ const axios = require('axios');
 const uploadToCloudinary = (buffer, mimetype) =>
   new Promise((resolve, reject) => {
     const resourceType = mimetype && mimetype.startsWith('video') ? 'video' : 'image';
+
     const stream = cloudinary.uploader.upload_stream(
       { folder: 'campuscart', resource_type: resourceType },
       (error, result) => {
@@ -13,6 +14,7 @@ const uploadToCloudinary = (buffer, mimetype) =>
         resolve(result.secure_url);
       }
     );
+
     stream.end(buffer);
   });
 
@@ -22,6 +24,7 @@ const extractPublicId = (url) => {
     const parts = url.split('/');
     const uploadIdx = parts.indexOf('upload');
     if (uploadIdx === -1) return null;
+
     const rest = parts.slice(uploadIdx + 1).join('/');
     return rest.replace(/\.[^/.]+$/, '').replace(/^v\d+\//, '');
   } catch {
@@ -186,62 +189,42 @@ exports.getMyProducts = async (req, res) => {
 };
 
 // ============================================================
-// AI DESCRIPTION GENERATOR
+// AI DESCRIPTION GENERATOR (FIXED)
 // ============================================================
-// NOTE: The old api-inference.huggingface.co endpoint has been deprecated.
-// Using the new router.huggingface.co with Together provider + Kimi-K2.6 VLM.
-const HF_VLM_URL = 'https://router.huggingface.co/together/v1/chat/completions';
-const HF_VLM_MODEL = 'moonshotai/Kimi-K2.6';
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY;
 
 const categoryMap = {
-  'book': 'Books',
-  'textbook': 'Books',
-  'novel': 'Books',
-  'phone': 'Electronics',
-  'laptop': 'Electronics',
-  'computer': 'Electronics',
-  'headphone': 'Electronics',
-  'speaker': 'Electronics',
-  'tablet': 'Electronics',
-  'camera': 'Electronics',
-  'earphone': 'Electronics',
-  'earbuds': 'Electronics',
-  'charger': 'Electronics',
-  'keyboard': 'Electronics',
-  'mouse': 'Electronics',
-  'monitor': 'Electronics',
-  'shirt': 'Clothing',
-  'pants': 'Clothing',
-  'dress': 'Clothing',
-  'jacket': 'Clothing',
-  'shoe': 'Clothing',
-  'uniform': 'Clothing',
-  'hoodie': 'Clothing',
-  'bed': 'Hostel',
-  'chair': 'Hostel',
-  'desk': 'Hostel',
-  'lamp': 'Hostel',
-  'table': 'Hostel',
-  'bedsheet': 'Hostel',
-  'pillow': 'Hostel',
-  'mattress': 'Hostel',
-  'ball': 'Sports',
-  'racket': 'Sports',
-  'bat': 'Sports',
-  'yoga': 'Sports',
-  'cricket': 'Sports',
-  'football': 'Sports',
-  'badminton': 'Sports',
-  'notebook': 'Stationery',
-  'pen': 'Lab',
-  'microscope': 'Lab',
-  'calculator': 'Lab',
-  'compass': 'Lab',
+  book: 'Books',
+  textbook: 'Books',
+  novel: 'Books',
+  phone: 'Electronics',
+  laptop: 'Electronics',
+  computer: 'Electronics',
+  headphone: 'Electronics',
+  speaker: 'Electronics',
+  tablet: 'Electronics',
+  camera: 'Electronics',
+  earbuds: 'Electronics',
+  charger: 'Electronics',
+  shirt: 'Clothing',
+  pants: 'Clothing',
+  dress: 'Clothing',
+  jacket: 'Clothing',
+  shoe: 'Clothing',
+  bed: 'Hostel',
+  chair: 'Hostel',
+  desk: 'Hostel',
+  lamp: 'Hostel',
+  ball: 'Sports',
+  racket: 'Sports',
+  bat: 'Sports',
+  notebook: 'Stationery',
+  pen: 'Lab',
+  calculator: 'Lab'
 };
 
-const detectCategory = (description) => {
-  const lower = description.toLowerCase();
+const detectCategory = (text) => {
+  const lower = text.toLowerCase();
   for (const key in categoryMap) {
     if (lower.includes(key)) return categoryMap[key];
   }
@@ -258,36 +241,33 @@ exports.generateDescription = async (req, res) => {
 
     if (!HF_API_KEY) {
       return res.status(500).json({
-        msg: 'AI service not configured. Please add HUGGING_FACE_API_KEY to environment.',
+        msg: 'AI service not configured',
         fallback: true
       });
     }
 
-    // 🔥 Convert base64 → buffer
     const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
     const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    // 🔥 FORCE absolute request (fixes your main bug)
     const response = await axios({
-      method: "POST",
-      url: "https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning",
+      method: 'POST',
+      url: 'https://api-inference.huggingface.co/models/nlpconnect/vit-gpt2-image-captioning',
       data: imageBuffer,
       headers: {
-      Authorization: `Bearer ${HF_API_KEY}`,
-      "Content-Type": "application/octet-stream",
-      "Accept": "application/json",
-      "x-wait-for-model": "true"
-    },
-      timeout:   45000,
+        Authorization: `Bearer ${HF_API_KEY}`,
+        'Content-Type': 'application/octet-stream',
+        Accept: 'application/json',
+        'x-wait-for-model': 'true'
+      },
+      timeout: 45000
     });
 
+    // ✅ FIXED: only ONE aiDescription (no duplicates)
     const aiDescription =
       response.data?.[0]?.generated_text ||
       response.data?.[0]?.caption ||
       'A product image';
 
-    const choice = response.data?.choices?.[0]?.message;
-    const aiDescription = (choice?.content || '').trim() || 'A product image';
     const suggestedCategory = detectCategory(aiDescription);
 
     res.json({
@@ -298,36 +278,18 @@ exports.generateDescription = async (req, res) => {
 
   } catch (err) {
     console.error('generateDescription error:', err.response?.data || err.message);
-    
-    // Check if model is loading (common with free HF API)
+
     if (err.response?.status === 503) {
-      return res.status(503).json({ 
-        msg: 'AI model is loading, please try again in ~20 seconds.',
-        error: 'Model loading',
+      return res.status(503).json({
+        msg: 'AI model is loading, try again in a few seconds',
         fallback: true
       });
     }
 
-    // Graceful fallback
-    res.status(500).json({ 
+    return res.status(500).json({
       msg: 'AI generation failed',
-      error: err.response?.data?.error?.message || err.response?.data?.error || err.message,
+      error: err.response?.data || err.message,
       fallback: true
-    // Provide a more descriptive error message to the frontend
-    let errorMessage = 'AI generation failed. Please try again.';
-    const hfData = err.response?.data;
-    
-    if (hfData) {
-      if (typeof hfData.error === 'string') {
-        errorMessage = hfData.error; // e.g. "Model is currently loading"
-      } else if (hfData.msg) {
-        errorMessage = hfData.msg;
-      }
-    }
-
-    res.status(500).json({
-      msg: errorMessage,
-      error: err.response?.data || err.message
     });
   }
 };
