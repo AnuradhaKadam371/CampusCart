@@ -88,7 +88,7 @@ const Register = () => {
                                         name="name"
                                         value={name}
                                         onChange={onChange}
-                                        placeholder="Ishan Bhosale "
+                                        placeholder="Alex River "
                                         style={inputStyle}
                                         required
                                     />
