@@ -213,7 +213,7 @@ const Login = () => {
                                         cursor: "pointer"
                                     }}
                                 >
-                                    {showPassword ? <i class="fa-solid fa-eye-slash"></i> : "👁️"}
+                                    {showPassword ? <i class="fa-solid fa-eye-slash"></i> : <i class="fa-solid fa-eye"></i>}
                                 </span>
                             </div>
                         </Form.Group>
