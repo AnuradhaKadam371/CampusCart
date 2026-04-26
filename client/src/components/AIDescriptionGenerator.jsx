@@ -39,7 +39,14 @@ const AIDescriptionGenerator = ({ images, onGeneratedDescription }) => {
           onGeneratedDescription({ description, category });
         } catch (err) {
           console.error('Generation error:', err);
-          alert(err.response?.data?.msg || 'Could not generate description. Please write manually.');
+          const status = err.response?.status;
+          const msg = err.response?.data?.msg;
+          
+          if (status === 503) {
+            alert('AI model is loading. Please wait ~20 seconds and try again.');
+          } else {
+            alert(msg || 'AI generation failed. Please write the description manually.');
+          }
           setGeneratedDesc('');
           setSuggestedCategory('');
           setShowSuggestion(false);

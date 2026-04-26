@@ -266,13 +266,27 @@ exports.generateDescription = async (req, res) => {
       });
     }
 
-    // Call Hugging Face API with the base64 image
+    // Convert base64 data URL to raw binary buffer
+    // Format: "data:image/jpeg;base64,/9j/4AAQ..."
+    const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    // Detect MIME type from data URL
+    const mimeMatch = imageUrl.match(/^data:(image\/\w+);base64,/);
+    const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+    // Call Hugging Face API with raw binary image data
     const response = await axios.post(
       HF_API_URL,
-      { inputs: imageUrl },
+      imageBuffer,
       { 
-        headers: { 'Authorization': `Bearer ${HF_API_KEY}` },
-        timeout: 45000 
+        headers: { 
+          'Authorization': `Bearer ${HF_API_KEY}`,
+          'Content-Type': contentType
+        },
+        timeout: 60000,
+        maxContentLength: 10 * 1024 * 1024,
+        maxBodyLength: 10 * 1024 * 1024
       }
     );
 
@@ -286,12 +300,21 @@ exports.generateDescription = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('generateDescription error:', err.message);
+    console.error('generateDescription error:', err.response?.data || err.message);
     
+    // Check if model is loading (common with free HF API)
+    if (err.response?.status === 503) {
+      return res.status(503).json({ 
+        msg: 'AI model is loading, please try again in ~20 seconds.',
+        error: 'Model loading',
+        fallback: true
+      });
+    }
+
     // Graceful fallback
     res.status(500).json({ 
-      msg: 'Could not generate description. Please write it manually.',
-      error: err.message,
+      msg: 'AI generation failed',
+      error: err.response?.data?.error || err.message,
       fallback: true
     });
   }

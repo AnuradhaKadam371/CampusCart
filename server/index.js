@@ -51,7 +51,7 @@ connectDB();
 // Middleware
 // ==========================
 app.use(cors(corsOptions)); // handles preflight OPTIONS automatically
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // ==========================
 // Health Route
