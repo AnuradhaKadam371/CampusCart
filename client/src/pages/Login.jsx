@@ -185,9 +185,7 @@ const Login = () => {
                         <Form.Group className="mb-2">
                             <div className="d-flex justify-content-between">
                                 <Form.Label>Password</Form.Label>
-                                <small className="text-primary" style={{ cursor: "pointer" }}>
-                                    Forgot Password?
-                                </small>
+                                
                             </div>
 
                             <div style={{ position: "relative" }}>
