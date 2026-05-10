@@ -1,10 +1,4 @@
 const nodemailer = require('nodemailer');
-const dns = require('dns');
-
-// Custom DNS lookup that forces IPv4 — fixes Render IPv6 ENETUNREACH error
-const dnsLookupIPv4 = (hostname, options, callback) => {
-  return dns.lookup(hostname, { ...options, family: 4 }, callback);
-};
 
 // ============================================================
 // LAZY transporter — created on first use, NOT at module load.
@@ -35,10 +29,6 @@ function getTransporter() {
       user: user,
       pass: pass,
     },
-    // Force IPv4 DNS resolution — Render free tier blocks IPv6 outbound
-    dnsOptions: { family: 4 },
-    // Custom DNS lookup to guarantee IPv4
-    dnsLookup: dnsLookupIPv4,
     tls: {
       rejectUnauthorized: false,
     },
