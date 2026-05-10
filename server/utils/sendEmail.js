@@ -14,6 +14,8 @@ async function sendViaBrevo(to, subject, htmlContent, plainText) {
 
   try {
     console.log('📧 [Brevo] Sending email to:', to);
+    console.log('📧 [Brevo] API Key starts with:', apiKey.substring(0, 15) + '...');
+    console.log('📧 [Brevo] Sender:', process.env.EMAIL_USER || 'support.campuscart@gmail.com');
     const response = await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
@@ -38,7 +40,9 @@ async function sendViaBrevo(to, subject, htmlContent, plainText) {
     console.log('✅ [Brevo] Email sent! MessageId:', response.data?.messageId);
     return true;
   } catch (err) {
-    console.error('❌ [Brevo] Failed:', err.response?.data?.message || err.message);
+    console.error('❌ [Brevo] Failed!');
+    console.error('   Status:', err.response?.status);
+    console.error('   Error:', JSON.stringify(err.response?.data || err.message));
     return false;
   }
 }
