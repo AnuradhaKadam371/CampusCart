@@ -4,7 +4,7 @@
   "description": "CampusCart MERN mini project backend",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node --dns-result-order=ipv4first index.js",
     "dev": "nodemon index.js"
   },
   "keywords": [],
