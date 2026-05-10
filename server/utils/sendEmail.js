@@ -6,7 +6,22 @@ const nodemailer = require('nodemailer');
 // ============================================================
 let transporter = null;
 
-function getTransporter() {
+function createTransporterWithConfig(port, secure) {
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: port,
+    secure: secure,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+  });
+}
+
+async function getTransporter() {
   if (transporter) return transporter;
 
   const user = process.env.EMAIL_USER;
@@ -21,32 +36,32 @@ function getTransporter() {
     return null;
   }
 
-  transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: user,
-      pass: pass,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-  });
+  // Try port 465 (SSL) first — more reliable on cloud platforms like Render
+  try {
+    console.log('📧 [Email] Trying port 465 (SSL)...');
+    const t465 = createTransporterWithConfig(465, true);
+    await t465.verify();
+    console.log('✅ [Email] Connected via port 465 (SSL)');
+    transporter = t465;
+    return transporter;
+  } catch (err) {
+    console.log('⚠️  [Email] Port 465 failed:', err.message);
+  }
 
-  // Verify connection on creation (non-blocking)
-  transporter.verify()
-    .then(() => console.log('✅ [Email] SMTP connection verified — ready to send'))
-    .catch((err) => {
-      console.error('❌ [Email] SMTP verification FAILED:', err.message);
-      console.error('   Check EMAIL_USER and EMAIL_PASS in .env / Render env vars');
-      transporter = null; // reset so it retries next time
-    });
+  // Fallback: try port 587 (STARTTLS)
+  try {
+    console.log('📧 [Email] Trying port 587 (STARTTLS)...');
+    const t587 = createTransporterWithConfig(587, false);
+    await t587.verify();
+    console.log('✅ [Email] Connected via port 587 (STARTTLS)');
+    transporter = t587;
+    return transporter;
+  } catch (err) {
+    console.log('❌ [Email] Port 587 also failed:', err.message);
+  }
 
-  return transporter;
+  console.error('❌ [Email] All SMTP connections failed! Emails will not be sent.');
+  return null;
 }
 
 /**
@@ -269,8 +284,8 @@ const sendEmail = async (to, subject, options) => {
     `;
   }
 
-  // Get transporter (lazy init)
-  const mailer = getTransporter();
+  // Get transporter (lazy init — tries port 465 then 587)
+  let mailer = await getTransporter();
   if (!mailer) {
     console.error('❌ [Email] Cannot send — transporter not available (check EMAIL_USER/EMAIL_PASS)');
     return;
@@ -289,11 +304,26 @@ const sendEmail = async (to, subject, options) => {
     console.error(`❌ [Email] FAILED to ${to} | Subject: "${subject}"`);
     console.error('   Error:', error.message);
     if (error.code) console.error('   Code:', error.code);
-    if (error.responseCode) console.error('   SMTP Response Code:', error.responseCode);
-    // Reset transporter on auth errors so it retries fresh next time
-    if (error.code === 'EAUTH' || error.responseCode === 535) {
-      console.error('   ⚠️  Resetting transporter due to auth failure');
+
+    // If connection failed, reset transporter and retry once (will try other port)
+    if (error.code === 'ESOCKET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED' || error.code === 'EAUTH' || error.responseCode === 535) {
+      console.log('   🔄 Resetting transporter and retrying...');
       transporter = null;
+      try {
+        mailer = await getTransporter();
+        if (mailer) {
+          const info = await mailer.sendMail({
+            from: `"CampusCart" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            text: plainText,
+            html: htmlContent
+          });
+          console.log(`✅ [Email] Retry SUCCESS to ${to} | MessageId: ${info.messageId}`);
+        }
+      } catch (retryErr) {
+        console.error('   ❌ [Email] Retry also FAILED:', retryErr.message);
+      }
     }
   }
 };
