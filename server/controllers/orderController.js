@@ -170,24 +170,27 @@ exports.acceptRequest = async (req, res) => {
     // Send email
     const buyer = await User.findById(order.buyerId);
 
-    const message = `
-Hello ${buyer.name},
-
-Good news!
-
-Your purchase request for "${product.title}" has been accepted.
-
-Please contact the seller.
-
-Thanks,
-CampusCart
-`;
-
-    await sendEmail(
-      buyer.email,
-      "Purchase Request Accepted - CampusCart",
-      message
-    );
+    try {
+      await sendEmail(
+        buyer.email,
+        "Purchase Request Accepted - CampusCart",
+        {
+          type: "accepted",
+          data: {
+            buyerName: buyer.name,
+            productTitle: product.title,
+            category: product.category,
+            description: product.description,
+            amount: product.price,
+            pickupDate: order.pickupDate,
+            pickupTime: order.pickupTime,
+            pickupLocation: order.pickupLocation,
+          },
+        }
+      );
+    } catch (emailErr) {
+      console.error("Accept email failed:", emailErr?.message || emailErr);
+    }
 
     res.json({ msg: "Request accepted successfully" });
   } catch (err) {
@@ -212,21 +215,24 @@ exports.rejectRequest = async (req, res) => {
     const buyer = await User.findById(order.buyerId);
     const product = await Product.findById(order.productId);
 
-    const message = `
-Hello ${buyer.name},
-
-Your request for "${product.title}" was rejected.
-
-Try other products.
-
-CampusCart Team
-`;
-
-    await sendEmail(
-      buyer.email,
-      "Purchase Request Rejected - CampusCart",
-      message
-    );
+    try {
+      await sendEmail(
+        buyer.email,
+        "Purchase Request Rejected - CampusCart",
+        {
+          type: "rejected",
+          data: {
+            buyerName: buyer.name,
+            productTitle: product.title,
+            category: product.category,
+            description: product.description,
+            amount: product.price,
+          },
+        }
+      );
+    } catch (emailErr) {
+      console.error("Reject email failed:", emailErr?.message || emailErr);
+    }
 
     res.json({ msg: "Request rejected successfully" });
   } catch (err) {

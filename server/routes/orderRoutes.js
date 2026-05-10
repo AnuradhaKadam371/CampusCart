@@ -90,31 +90,34 @@ router.post("/create", authMiddleware, async (req, res) => {
   status: "pending",
 });
 
-    // Email should not break order creation in production.
-    try {
-      const buyer = await User.findById(buyerId);
-      const sellerEmail = product.sellerId?.email;
-      if (sellerEmail) {
-        await sendEmail(sellerEmail, "New Purchase Request", {
-          type: "request",
-          data: {
-            sellerName: product.sellerId?.name || "Seller",
-            buyerName: buyer?.name || "Buyer",
-            productTitle: product.title,
-            category: product.category,
-            description: product.description,
-            amount: product.price,
-          },
-        });
-      }
-    } catch (emailErr) {
-      console.error("Order email send failed:", emailErr?.message || emailErr);
-    }
-
+    // Send response FIRST so buyer doesn't wait for email
     res.status(201).json({
       msg: "Order created successfully",
       order,
     });
+
+    // Fire-and-forget: send email to seller in the background
+    (async () => {
+      try {
+        const buyer = await User.findById(buyerId);
+        const sellerEmail = product.sellerId?.email;
+        if (sellerEmail) {
+          await sendEmail(sellerEmail, "New Purchase Request", {
+            type: "request",
+            data: {
+              sellerName: product.sellerId?.name || "Seller",
+              buyerName: buyer?.name || "Buyer",
+              productTitle: product.title,
+              category: product.category,
+              description: product.description,
+              amount: product.price,
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error("Order email send failed:", emailErr?.message || emailErr);
+      }
+    })();
 
   } catch (error) {
     console.error("Create Order Error:", error);
@@ -346,18 +349,6 @@ router.put("/accept/:id", authMiddleware, async (req, res) => {
     for (let o of otherOrders) {
       o.status = "rejected";
       await o.save();
-
-      // Send rejection email
-      await sendEmail(o.buyerId.email, "Request Rejected", {
-        type: "rejected",
-        data: {
-          buyerName: o.buyerId.name,
-          productTitle: o.productTitle,
-          category: o.category,
-          description: o.description,
-          amount: o.amount,
-        },
-      });
     }
 
     // Mark product as sold
@@ -366,8 +357,26 @@ router.put("/accept/:id", authMiddleware, async (req, res) => {
       soldTo: order.buyerId._id,
     });
 
-    // Send accept email
-    await sendEmail(order.buyerId.email, "Request Accepted", {
+    // Send response FIRST so the user doesn't wait for emails
+    res.json({ msg: "Order accepted successfully", order });
+
+    // Fire-and-forget: send emails in the background (non-blocking)
+    // Send rejection emails to other buyers
+    for (let o of otherOrders) {
+      sendEmail(o.buyerId.email, "Request Rejected", {
+        type: "rejected",
+        data: {
+          buyerName: o.buyerId.name,
+          productTitle: o.productTitle,
+          category: o.category,
+          description: o.description,
+          amount: o.amount,
+        },
+      }).catch(err => console.error("Rejection email failed:", err?.message || err));
+    }
+
+    // Send acceptance email to the buyer
+    sendEmail(order.buyerId.email, "Request Accepted", {
       type: "accepted",
       data: {
         buyerName: order.buyerId.name,
@@ -379,9 +388,7 @@ router.put("/accept/:id", authMiddleware, async (req, res) => {
         pickupTime,
         pickupLocation,
       },
-    });
-
-    res.json({ msg: "Order accepted successfully", order });
+    }).catch(err => console.error("Accept email failed:", err?.message || err));
 
   } catch (error) {
     console.error("Accept Error:", error);
@@ -436,7 +443,11 @@ router.put("/reject/:id", authMiddleware, async (req, res) => {
     order.status = "rejected";
     await order.save();
 
-    await sendEmail(order.buyerId.email, "Request Rejected", {
+    // Send response FIRST
+    res.json({ msg: "Order rejected successfully" });
+
+    // Fire-and-forget: send rejection email in the background
+    sendEmail(order.buyerId.email, "Request Rejected", {
       type: "rejected",
       data: {
         buyerName: order.buyerId.name,
@@ -445,9 +456,7 @@ router.put("/reject/:id", authMiddleware, async (req, res) => {
         description: order.description,
         amount: order.amount,
       },
-    });
-
-    res.json({ msg: "Order rejected successfully" });
+    }).catch(err => console.error("Reject email failed:", err?.message || err));
 
   } catch (error) {
     console.error("Reject Error:", error);

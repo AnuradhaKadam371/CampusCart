@@ -13,11 +13,11 @@ import './AdminDashboard.css';
 /* ─── Constants ─────────────────────────────────────────── */
 const DEPARTMENTS = [
   'Computer Science Engineering',
-  'CSE (AIML)',
-  'CSBS',
-  'Electronics',
-  'Electrical',
-  'Mechanical',
+  'CSE (AIML) Engineering',
+  'Computer Science & Business System Engineering',
+  'Electronics Engineering',
+  'Electrical Engineering',
+  'Mechanical Engineering',
   'MBA',
   'MCA',
 ];
