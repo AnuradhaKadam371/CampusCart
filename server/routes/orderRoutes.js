@@ -97,25 +97,42 @@ router.post("/create", authMiddleware, async (req, res) => {
     });
 
     // Fire-and-forget: send email to seller in the background
+    const savedSellerId = product.sellerId?._id || product.sellerId;
+    const savedProductTitle = product.title;
+    const savedProductCategory = product.category;
+    const savedProductDescription = product.description;
+    const savedProductPrice = product.price;
+
     (async () => {
       try {
+        console.log("📧 [OrderCreate] Starting email send...");
+
+        // Fetch seller & buyer fresh from DB (don't rely on populated data)
+        const seller = await User.findById(savedSellerId);
         const buyer = await User.findById(buyerId);
-        const sellerEmail = product.sellerId?.email;
-        if (sellerEmail) {
-          await sendEmail(sellerEmail, "New Purchase Request", {
-            type: "request",
-            data: {
-              sellerName: product.sellerId?.name || "Seller",
-              buyerName: buyer?.name || "Buyer",
-              productTitle: product.title,
-              category: product.category,
-              description: product.description,
-              amount: product.price,
-            },
-          });
+
+        console.log("📧 [OrderCreate] seller:", seller ? `${seller.name} <${seller.email}>` : "NOT FOUND");
+        console.log("📧 [OrderCreate] buyer:", buyer ? buyer.name : "NOT FOUND");
+
+        if (!seller || !seller.email) {
+          console.error("❌ [OrderCreate] No seller email — cannot send! sellerId:", savedSellerId);
+          return;
         }
+
+        await sendEmail(seller.email, "New Purchase Request on CampusCart", {
+          type: "request",
+          data: {
+            sellerName: seller.name || "Seller",
+            buyerName: buyer?.name || "Buyer",
+            productTitle: savedProductTitle,
+            category: savedProductCategory,
+            description: savedProductDescription,
+            amount: savedProductPrice,
+          },
+        });
+        console.log("✅ [OrderCreate] Email sent to seller:", seller.email);
       } catch (emailErr) {
-        console.error("Order email send failed:", emailErr?.message || emailErr);
+        console.error("❌ [OrderCreate] Email FAILED:", emailErr?.message || emailErr);
       }
     })();
 
@@ -361,34 +378,52 @@ router.put("/accept/:id", authMiddleware, async (req, res) => {
     res.json({ msg: "Order accepted successfully", order });
 
     // Fire-and-forget: send emails in the background (non-blocking)
-    // Send rejection emails to other buyers
-    for (let o of otherOrders) {
-      sendEmail(o.buyerId.email, "Request Rejected", {
-        type: "rejected",
-        data: {
-          buyerName: o.buyerId.name,
-          productTitle: o.productTitle,
-          category: o.category,
-          description: o.description,
-          amount: o.amount,
-        },
-      }).catch(err => console.error("Rejection email failed:", err?.message || err));
-    }
+    const acceptedBuyerId = order.buyerId?._id || order.buyerId;
+    const acceptOrderData = { productTitle: order.productTitle, category: order.category, description: order.description, amount: order.amount };
 
-    // Send acceptance email to the buyer
-    sendEmail(order.buyerId.email, "Request Accepted", {
-      type: "accepted",
-      data: {
-        buyerName: order.buyerId.name,
-        productTitle: order.productTitle,
-        category: order.category,
-        description: order.description,
-        amount: order.amount,
-        pickupDate,
-        pickupTime,
-        pickupLocation,
-      },
-    }).catch(err => console.error("Accept email failed:", err?.message || err));
+    (async () => {
+      try {
+        // Send rejection emails to other buyers
+        for (let o of otherOrders) {
+          const rejBuyerId = o.buyerId?._id || o.buyerId;
+          const rejBuyer = await User.findById(rejBuyerId);
+          if (rejBuyer?.email) {
+            console.log("📧 [Accept] Sending rejection email to:", rejBuyer.email);
+            await sendEmail(rejBuyer.email, "Request Rejected", {
+              type: "rejected",
+              data: {
+                buyerName: rejBuyer.name,
+                productTitle: o.productTitle,
+                category: o.category,
+                description: o.description,
+                amount: o.amount,
+              },
+            });
+          }
+        }
+
+        // Send acceptance email to the buyer
+        const acceptBuyer = await User.findById(acceptedBuyerId);
+        if (acceptBuyer?.email) {
+          console.log("📧 [Accept] Sending acceptance email to:", acceptBuyer.email);
+          await sendEmail(acceptBuyer.email, "Request Accepted", {
+            type: "accepted",
+            data: {
+              buyerName: acceptBuyer.name,
+              ...acceptOrderData,
+              pickupDate,
+              pickupTime,
+              pickupLocation,
+            },
+          });
+          console.log("✅ [Accept] Acceptance email sent!");
+        } else {
+          console.error("❌ [Accept] Buyer not found or no email, buyerId:", acceptedBuyerId);
+        }
+      } catch (emailErr) {
+        console.error("❌ [Accept] Email FAILED:", emailErr?.message || emailErr);
+      }
+    })();
 
   } catch (error) {
     console.error("Accept Error:", error);
@@ -447,16 +482,30 @@ router.put("/reject/:id", authMiddleware, async (req, res) => {
     res.json({ msg: "Order rejected successfully" });
 
     // Fire-and-forget: send rejection email in the background
-    sendEmail(order.buyerId.email, "Request Rejected", {
-      type: "rejected",
-      data: {
-        buyerName: order.buyerId.name,
-        productTitle: order.productTitle,
-        category: order.category,
-        description: order.description,
-        amount: order.amount,
-      },
-    }).catch(err => console.error("Reject email failed:", err?.message || err));
+    const rejBuyerId = order.buyerId?._id || order.buyerId;
+    (async () => {
+      try {
+        const rejBuyer = await User.findById(rejBuyerId);
+        if (rejBuyer?.email) {
+          console.log("📧 [Reject] Sending rejection email to:", rejBuyer.email);
+          await sendEmail(rejBuyer.email, "Request Rejected", {
+            type: "rejected",
+            data: {
+              buyerName: rejBuyer.name,
+              productTitle: order.productTitle,
+              category: order.category,
+              description: order.description,
+              amount: order.amount,
+            },
+          });
+          console.log("✅ [Reject] Rejection email sent!");
+        } else {
+          console.error("❌ [Reject] Buyer not found or no email, buyerId:", rejBuyerId);
+        }
+      } catch (emailErr) {
+        console.error("❌ [Reject] Email FAILED:", emailErr?.message || emailErr);
+      }
+    })();
 
   } catch (error) {
     console.error("Reject Error:", error);

@@ -170,26 +170,32 @@ exports.acceptRequest = async (req, res) => {
     // Send email
     const buyer = await User.findById(order.buyerId);
 
-    try {
-      await sendEmail(
-        buyer.email,
-        "Purchase Request Accepted - CampusCart",
-        {
-          type: "accepted",
-          data: {
-            buyerName: buyer.name,
-            productTitle: product.title,
-            category: product.category,
-            description: product.description,
-            amount: product.price,
-            pickupDate: order.pickupDate,
-            pickupTime: order.pickupTime,
-            pickupLocation: order.pickupLocation,
-          },
-        }
-      );
-    } catch (emailErr) {
-      console.error("Accept email failed:", emailErr?.message || emailErr);
+    if (buyer?.email) {
+      try {
+        console.log("📧 [Controller-Accept] Sending to:", buyer.email);
+        await sendEmail(
+          buyer.email,
+          "Purchase Request Accepted - CampusCart",
+          {
+            type: "accepted",
+            data: {
+              buyerName: buyer.name,
+              productTitle: product.title,
+              category: product.category,
+              description: product.description,
+              amount: product.price,
+              pickupDate: order.pickupDate,
+              pickupTime: order.pickupTime,
+              pickupLocation: order.pickupLocation,
+            },
+          }
+        );
+        console.log("✅ [Controller-Accept] Email sent!");
+      } catch (emailErr) {
+        console.error("❌ [Controller-Accept] Email failed:", emailErr?.message || emailErr);
+      }
+    } else {
+      console.error("❌ [Controller-Accept] No buyer email found!");
     }
 
     res.json({ msg: "Request accepted successfully" });
@@ -215,23 +221,29 @@ exports.rejectRequest = async (req, res) => {
     const buyer = await User.findById(order.buyerId);
     const product = await Product.findById(order.productId);
 
-    try {
-      await sendEmail(
-        buyer.email,
-        "Purchase Request Rejected - CampusCart",
-        {
-          type: "rejected",
-          data: {
-            buyerName: buyer.name,
-            productTitle: product.title,
-            category: product.category,
-            description: product.description,
-            amount: product.price,
-          },
-        }
-      );
-    } catch (emailErr) {
-      console.error("Reject email failed:", emailErr?.message || emailErr);
+    if (buyer?.email) {
+      try {
+        console.log("📧 [Controller-Reject] Sending to:", buyer.email);
+        await sendEmail(
+          buyer.email,
+          "Purchase Request Rejected - CampusCart",
+          {
+            type: "rejected",
+            data: {
+              buyerName: buyer.name,
+              productTitle: product.title,
+              category: product.category,
+              description: product.description,
+              amount: product.price,
+            },
+          }
+        );
+        console.log("✅ [Controller-Reject] Email sent!");
+      } catch (emailErr) {
+        console.error("❌ [Controller-Reject] Email failed:", emailErr?.message || emailErr);
+      }
+    } else {
+      console.error("❌ [Controller-Reject] No buyer email found!");
     }
 
     res.json({ msg: "Request rejected successfully" });
