@@ -1,8 +1,23 @@
 require("dotenv").config();
 
-// Force IPv4 globally — Render free tier doesn't support IPv6 outbound
+// ============================================================
+// Force ALL DNS lookups to IPv4 — Render blocks IPv6 outbound
+// This MUST run before any other require() that makes connections
+// ============================================================
 const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
+const origLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  if (typeof options === "function") {
+    callback = options;
+    options = 0;
+  }
+  if (typeof options === "number") {
+    options = { family: options };
+  }
+  if (!options) options = {};
+  options.family = 4; // Force IPv4 always
+  return origLookup.call(this, hostname, options, callback);
+};
 
 const express = require("express");
 const connectDB = require("./config/db");
