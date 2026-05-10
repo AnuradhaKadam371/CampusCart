@@ -1,83 +1,100 @@
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 // ============================================================
-// LAZY transporter — created on first use, NOT at module load.
-// This guarantees process.env is fully loaded by dotenv first.
+// EMAIL SENDING — Two methods:
+// 1. Brevo HTTP API (works on Render — no SMTP ports needed)
+// 2. Gmail SMTP fallback (works locally)
 // ============================================================
+
+// ---------- METHOD 1: BREVO HTTP API (for Render) ----------
+async function sendViaBrevo(to, subject, htmlContent, plainText) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return false;
+
+  try {
+    console.log('📧 [Brevo] Sending email to:', to);
+    const response = await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        sender: {
+          name: 'CampusCart',
+          email: process.env.EMAIL_USER || 'support.campuscart@gmail.com',
+        },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: htmlContent,
+        textContent: plainText,
+      },
+      {
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        timeout: 15000,
+      }
+    );
+    console.log('✅ [Brevo] Email sent! MessageId:', response.data?.messageId);
+    return true;
+  } catch (err) {
+    console.error('❌ [Brevo] Failed:', err.response?.data?.message || err.message);
+    return false;
+  }
+}
+
+// ---------- METHOD 2: GMAIL SMTP (for local dev) ----------
 let transporter = null;
 
-function createTransporterWithConfig(port, secure) {
+async function sendViaGmail(to, subject, htmlContent, plainText) {
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: port,
-    secure: secure,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-  });
-}
-
-async function getTransporter() {
-  if (transporter) return transporter;
-
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
-
-  console.log('📧 [Email] Creating SMTP transporter...');
-  console.log('📧 [Email] EMAIL_USER =', user ? `${user.slice(0, 4)}***` : '⚠️  MISSING');
-  console.log('📧 [Email] EMAIL_PASS =', pass ? '***SET***' : '⚠️  MISSING');
 
   if (!user || !pass) {
-    console.error('❌ [Email] EMAIL_USER or EMAIL_PASS not set in environment!');
-    return null;
+    console.error('❌ [Gmail] EMAIL_USER or EMAIL_PASS not set!');
+    return false;
   }
 
-  // Try port 465 (SSL) first — more reliable on cloud platforms like Render
+  if (!transporter) {
+    console.log('📧 [Gmail] Creating SMTP transporter...');
+    transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+  }
+
   try {
-    console.log('📧 [Email] Trying port 465 (SSL)...');
-    const t465 = createTransporterWithConfig(465, true);
-    await t465.verify();
-    console.log('✅ [Email] Connected via port 465 (SSL)');
-    transporter = t465;
-    return transporter;
+    const info = await transporter.sendMail({
+      from: `"CampusCart" <${user}>`,
+      to,
+      subject,
+      text: plainText,
+      html: htmlContent,
+    });
+    console.log(`✅ [Gmail] Sent to ${to} | MessageId: ${info.messageId}`);
+    return true;
   } catch (err) {
-    console.log('⚠️  [Email] Port 465 failed:', err.message);
+    console.error('❌ [Gmail] Failed:', err.message);
+    transporter = null; // reset for retry
+    return false;
   }
-
-  // Fallback: try port 587 (STARTTLS)
-  try {
-    console.log('📧 [Email] Trying port 587 (STARTTLS)...');
-    const t587 = createTransporterWithConfig(587, false);
-    await t587.verify();
-    console.log('✅ [Email] Connected via port 587 (STARTTLS)');
-    transporter = t587;
-    return transporter;
-  } catch (err) {
-    console.log('❌ [Email] Port 587 also failed:', err.message);
-  }
-
-  console.error('❌ [Email] All SMTP connections failed! Emails will not be sent.');
-  return null;
 }
 
-/**
- * Send professional email
- * @param {string} to - recipient email
- * @param {string} subject - email subject
- * @param {Object} options - contains type and dynamic content
- *    options.type: 'request' | 'accepted' | 'rejected'
- *    options.data: dynamic values like buyerName, sellerName, productTitle, amount, pickup details
- */
+// ============================================================
+// MAIN SEND FUNCTION
+// Tries Brevo first (works on Render), falls back to Gmail SMTP
+// ============================================================
 const sendEmail = async (to, subject, options) => {
   let htmlContent = '';
   let plainText = '';
 
   if (options.type === 'request') {
-    // Buyer sent request → Email to seller
     const {
       sellerName,
       buyerName,
@@ -123,208 +140,79 @@ const sendEmail = async (to, subject, options) => {
       </html>
     `;
 
-    plainText = `
-      New Purchase Request Received
+    plainText = `New Purchase Request\n\nHi ${sellerName},\n\nProduct: ${productTitle}\nBuyer: ${buyerName}\nAmount: ₹${amount}\n\nPlease login to accept or reject.\n\nRegards,\nCampusCart Team`;
 
-      Hi ${sellerName},
-
-      You have received a new purchase request for your product:
-
-      Product: ${productTitle}
-      ${category ? `Category: ${category}` : ''}
-      ${description ? `Description: ${description}` : ''}
-      Buyer: ${buyerName}
-      Amount: ₹${amount}
-
-      Please login to your CampusCart account to accept or reject this request.
-
-      Regards,
-      CampusCart Team
-    `;
-  } else if (options.type === "rejected") {
-
+  } else if (options.type === 'rejected') {
     const { buyerName, productTitle, category, description, amount } = options.data;
 
     htmlContent = `
     <html>
       <body style="font-family: Arial;">
         <h2 style="color:#E74C3C;">Purchase Request Rejected</h2>
-
         <p>Hi <strong>${buyerName}</strong>,</p>
-
         <p>Your purchase request for the following product has been rejected by the seller.</p>
-
-        <table border="1" cellpadding="8">
-          <tr>
-            <td><strong>Product</strong></td>
-            <td>${productTitle}</td>
-          </tr>
-          ${category ? `
-          <tr>
-            <td><strong>Category</strong></td>
-            <td>${category}</td>
-          </tr>` : ''}
-          ${description ? `
-          <tr>
-            <td><strong>Description</strong></td>
-            <td>${description}</td>
-          </tr>` : ''}
-
-          <tr>
-            <td><strong>Amount</strong></td>
-            <td>₹${amount}</td>
-          </tr>
+        <table border="1" cellpadding="8" style="border-collapse: collapse;">
+          <tr><td><strong>Product</strong></td><td>${productTitle}</td></tr>
+          ${category ? `<tr><td><strong>Category</strong></td><td>${category}</td></tr>` : ''}
+          ${description ? `<tr><td><strong>Description</strong></td><td>${description}</td></tr>` : ''}
+          <tr><td><strong>Amount</strong></td><td>₹${amount}</td></tr>
         </table>
-
         <p>You can explore other products on CampusCart.</p>
-
         <p>Regards,<br>CampusCart Team</p>
       </body>
     </html>
     `;
 
-    plainText = `
-    Purchase Request Rejected
+    plainText = `Request Rejected\n\nHi ${buyerName},\n\nYour request for "${productTitle}" (₹${amount}) was rejected.\n\nRegards,\nCampusCart Team`;
 
-    Hi ${buyerName},
-
-    Your purchase request for "${productTitle}" worth ₹${amount}
-    has been rejected by the seller.
-
-    Please explore other products on CampusCart.
-
-    Regards,
-    CampusCart Team
-    `;
-  } else if (options.type === "accepted") {
+  } else if (options.type === 'accepted') {
     const {
-      buyerName,
-      productTitle,
-      category,
-      description,
-      amount,
-      pickupDate,
-      pickupTime,
-      pickupLocation
+      buyerName, productTitle, category, description,
+      amount, pickupDate, pickupTime, pickupLocation
     } = options.data;
 
     const pickupDateFormatted = pickupDate
       ? new Date(pickupDate).toLocaleDateString()
-      : "";
+      : '';
 
     htmlContent = `
     <html>
       <body style="font-family: Arial;">
         <h2 style="color:#2ECC71;">Purchase Request Accepted</h2>
-
         <p>Hi <strong>${buyerName}</strong>,</p>
         <p>Good news! Your purchase request has been <strong>accepted</strong> by the seller.</p>
-
         <table border="1" cellpadding="8" style="border-collapse: collapse;">
-          <tr>
-            <td><strong>Product</strong></td>
-            <td>${productTitle}</td>
-          </tr>
-          ${category ? `
-          <tr>
-            <td><strong>Category</strong></td>
-            <td>${category}</td>
-          </tr>` : ''}
-          ${description ? `
-          <tr>
-            <td><strong>Description</strong></td>
-            <td>${description}</td>
-          </tr>` : ''}
-          <tr>
-            <td><strong>Amount</strong></td>
-            <td>₹${amount}</td>
-          </tr>
+          <tr><td><strong>Product</strong></td><td>${productTitle}</td></tr>
+          ${category ? `<tr><td><strong>Category</strong></td><td>${category}</td></tr>` : ''}
+          ${description ? `<tr><td><strong>Description</strong></td><td>${description}</td></tr>` : ''}
+          <tr><td><strong>Amount</strong></td><td>₹${amount}</td></tr>
         </table>
-
         <h3 style="margin-top:16px;">Pickup Details</h3>
         <table border="1" cellpadding="8" style="border-collapse: collapse;">
-          <tr>
-            <td><strong>Date</strong></td>
-            <td>${pickupDateFormatted || "-"}</td>
-          </tr>
-          <tr>
-            <td><strong>Time</strong></td>
-            <td>${pickupTime || "-"}</td>
-          </tr>
-          <tr>
-            <td><strong>Location</strong></td>
-            <td>${pickupLocation || "-"}</td>
-          </tr>
+          <tr><td><strong>Date</strong></td><td>${pickupDateFormatted || '-'}</td></tr>
+          <tr><td><strong>Time</strong></td><td>${pickupTime || '-'}</td></tr>
+          <tr><td><strong>Location</strong></td><td>${pickupLocation || '-'}</td></tr>
         </table>
-
         <p style="margin-top:14px;">Please be on time and carry the required amount.</p>
         <p>Regards,<br>CampusCart Team</p>
       </body>
     </html>
     `;
 
-    plainText = `
-    Purchase Request Accepted
-
-    Hi ${buyerName},
-
-    Your request has been accepted for:
-    Product: ${productTitle}
-    ${category ? `Category: ${category}` : ''}
-    ${description ? `Description: ${description}` : ''}
-    Amount: ₹${amount}
-
-    Pickup details:
-    Date: ${pickupDateFormatted || "-"}
-    Time: ${pickupTime || "-"}
-    Location: ${pickupLocation || "-"}
-
-    Regards,
-    CampusCart Team
-    `;
+    plainText = `Request Accepted\n\nHi ${buyerName},\n\nProduct: ${productTitle}\nAmount: ₹${amount}\n\nPickup: ${pickupDateFormatted || '-'} at ${pickupTime || '-'}\nLocation: ${pickupLocation || '-'}\n\nRegards,\nCampusCart Team`;
   }
 
-  // Get transporter (lazy init — tries port 465 then 587)
-  let mailer = await getTransporter();
-  if (!mailer) {
-    console.error('❌ [Email] Cannot send — transporter not available (check EMAIL_USER/EMAIL_PASS)');
-    return;
+  // Try Brevo HTTP API first (works on Render — no SMTP needed)
+  if (process.env.BREVO_API_KEY) {
+    const brevoSuccess = await sendViaBrevo(to, subject, htmlContent, plainText);
+    if (brevoSuccess) return;
+    console.log('⚠️  [Email] Brevo failed, trying Gmail SMTP...');
   }
 
-  try {
-    const info = await mailer.sendMail({
-      from: `"CampusCart" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text: plainText,
-      html: htmlContent
-    });
-    console.log(`✅ [Email] Sent to ${to} | Subject: "${subject}" | MessageId: ${info.messageId}`);
-  } catch (error) {
-    console.error(`❌ [Email] FAILED to ${to} | Subject: "${subject}"`);
-    console.error('   Error:', error.message);
-    if (error.code) console.error('   Code:', error.code);
-
-    // If connection failed, reset transporter and retry once (will try other port)
-    if (error.code === 'ESOCKET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED' || error.code === 'EAUTH' || error.responseCode === 535) {
-      console.log('   🔄 Resetting transporter and retrying...');
-      transporter = null;
-      try {
-        mailer = await getTransporter();
-        if (mailer) {
-          const info = await mailer.sendMail({
-            from: `"CampusCart" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            text: plainText,
-            html: htmlContent
-          });
-          console.log(`✅ [Email] Retry SUCCESS to ${to} | MessageId: ${info.messageId}`);
-        }
-      } catch (retryErr) {
-        console.error('   ❌ [Email] Retry also FAILED:', retryErr.message);
-      }
-    }
+  // Fallback: Gmail SMTP (works locally)
+  const gmailSuccess = await sendViaGmail(to, subject, htmlContent, plainText);
+  if (!gmailSuccess) {
+    console.error('❌ [Email] ALL methods failed! Email NOT sent to:', to);
   }
 };
 

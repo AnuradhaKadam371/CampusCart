@@ -128,8 +128,9 @@ server.listen(PORT, () => {
   // 📧 Email config diagnostic (visible in Render logs)
   console.log(`📧 EMAIL_USER: ${process.env.EMAIL_USER ? process.env.EMAIL_USER : '❌ NOT SET'}`);
   console.log(`📧 EMAIL_PASS: ${process.env.EMAIL_PASS ? '✅ SET' : '❌ NOT SET'}`);
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('⚠️  Email will NOT work — set EMAIL_USER and EMAIL_PASS in Render Environment Variables!');
+  console.log(`📧 BREVO_API_KEY: ${process.env.BREVO_API_KEY ? '✅ SET' : '❌ NOT SET — emails will NOT work on Render!'}`);
+  if (!process.env.BREVO_API_KEY) {
+    console.warn('⚠️  Add BREVO_API_KEY in Render Environment Variables for emails to work!');
   }
 
   // ✅ Keep-alive ping: prevents Render free tier from sleeping
