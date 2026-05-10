@@ -12,6 +12,7 @@ import './AdminDashboard.css';
 
 /* ─── Constants ─────────────────────────────────────────── */
 const DEPARTMENTS = [
+  'Biotechnology Engineering',
   'Computer Science Engineering',
   'CSE (AIML) Engineering',
   'Computer Science & Business System Engineering',

@@ -183,6 +183,7 @@ const MyProfile = () => {
                                     disabled={!editing}
                                 >
                                     <option value="">Select Department</option>
+                                    <option value="Biotechnology Engineering">Biotechnology Engineering</option>
                                     <option value="Computer Science Engineering">Computer Science Engineering</option>
                                     <option value="CSE (AIML) Engineering">CSE (AIML) Engineering</option>
                                     <option value="Computer Science & Business System Engineering">Computer Science &amp; Business System Engineering</option>

@@ -1,20 +1,60 @@
 const nodemailer = require('nodemailer');
 
-// Create transporter using Gmail + App Password
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,       // support.campuscart@gmail.com
-    pass: process.env.EMAIL_PASS   // Gmail App Password
+// ============================================================
+// LAZY transporter — created on first use, NOT at module load.
+// This guarantees process.env is fully loaded by dotenv first.
+// ============================================================
+let transporter = null;
+
+function getTransporter() {
+  if (transporter) return transporter;
+
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  console.log('📧 [Email] Creating SMTP transporter...');
+  console.log('📧 [Email] EMAIL_USER =', user ? `${user.slice(0, 4)}***` : '⚠️  MISSING');
+  console.log('📧 [Email] EMAIL_PASS =', pass ? '***SET***' : '⚠️  MISSING');
+
+  if (!user || !pass) {
+    console.error('❌ [Email] EMAIL_USER or EMAIL_PASS not set in environment!');
+    return null;
   }
-});
+
+  transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // STARTTLS
+    auth: {
+      user: user,
+      pass: pass,
+    },
+    tls: {
+      rejectUnauthorized: false, // allows self-signed certs on some hosts
+    },
+    connectionTimeout: 10000, // 10s connect timeout
+    greetingTimeout: 10000,   // 10s greeting timeout
+    socketTimeout: 15000,     // 15s socket timeout
+  });
+
+  // Verify connection on creation (non-blocking)
+  transporter.verify()
+    .then(() => console.log('✅ [Email] SMTP connection verified — ready to send'))
+    .catch((err) => {
+      console.error('❌ [Email] SMTP verification FAILED:', err.message);
+      console.error('   Check EMAIL_USER and EMAIL_PASS in .env / Render env vars');
+      transporter = null; // reset so it retries next time
+    });
+
+  return transporter;
+}
 
 /**
  * Send professional email
  * @param {string} to - recipient email
  * @param {string} subject - email subject
  * @param {Object} options - contains type and dynamic content
- *    options.type: 'request' | 'accepted'
+ *    options.type: 'request' | 'accepted' | 'rejected'
  *    options.data: dynamic values like buyerName, sellerName, productTitle, amount, pickup details
  */
 const sendEmail = async (to, subject, options) => {
@@ -86,160 +126,175 @@ const sendEmail = async (to, subject, options) => {
       Regards,
       CampusCart Team
     `;
-  }else if (options.type === "rejected") {
+  } else if (options.type === "rejected") {
 
-  const { buyerName, productTitle, category, description, amount } = options.data;
+    const { buyerName, productTitle, category, description, amount } = options.data;
 
-  htmlContent = `
-  <html>
-    <body style="font-family: Arial;">
-      <h2 style="color:#E74C3C;">Purchase Request Rejected</h2>
+    htmlContent = `
+    <html>
+      <body style="font-family: Arial;">
+        <h2 style="color:#E74C3C;">Purchase Request Rejected</h2>
 
-      <p>Hi <strong>${buyerName}</strong>,</p>
+        <p>Hi <strong>${buyerName}</strong>,</p>
 
-      <p>Your purchase request for the following product has been rejected by the seller.</p>
+        <p>Your purchase request for the following product has been rejected by the seller.</p>
 
-      <table border="1" cellpadding="8">
-        <tr>
-          <td><strong>Product</strong></td>
-          <td>${productTitle}</td>
-        </tr>
-        ${category ? `
-        <tr>
-          <td><strong>Category</strong></td>
-          <td>${category}</td>
-        </tr>` : ''}
-        ${description ? `
-        <tr>
-          <td><strong>Description</strong></td>
-          <td>${description}</td>
-        </tr>` : ''}
+        <table border="1" cellpadding="8">
+          <tr>
+            <td><strong>Product</strong></td>
+            <td>${productTitle}</td>
+          </tr>
+          ${category ? `
+          <tr>
+            <td><strong>Category</strong></td>
+            <td>${category}</td>
+          </tr>` : ''}
+          ${description ? `
+          <tr>
+            <td><strong>Description</strong></td>
+            <td>${description}</td>
+          </tr>` : ''}
 
-        <tr>
-          <td><strong>Amount</strong></td>
-          <td>₹${amount}</td>
-        </tr>
-      </table>
+          <tr>
+            <td><strong>Amount</strong></td>
+            <td>₹${amount}</td>
+          </tr>
+        </table>
 
-      <p>You can explore other products on CampusCart.</p>
+        <p>You can explore other products on CampusCart.</p>
 
-      <p>Regards,<br>CampusCart Team</p>
-    </body>
-  </html>
-  `;
+        <p>Regards,<br>CampusCart Team</p>
+      </body>
+    </html>
+    `;
 
-  plainText = `
-  Purchase Request Rejected
+    plainText = `
+    Purchase Request Rejected
 
-  Hi ${buyerName},
+    Hi ${buyerName},
 
-  Your purchase request for "${productTitle}" worth ₹${amount}
-  has been rejected by the seller.
+    Your purchase request for "${productTitle}" worth ₹${amount}
+    has been rejected by the seller.
 
-  Please explore other products on CampusCart.
+    Please explore other products on CampusCart.
 
-  Regards,
-  CampusCart Team
-  `;
-} else if (options.type === "accepted") {
-  const {
-    buyerName,
-    productTitle,
-    category,
-    description,
-    amount,
-    pickupDate,
-    pickupTime,
-    pickupLocation
-  } = options.data;
+    Regards,
+    CampusCart Team
+    `;
+  } else if (options.type === "accepted") {
+    const {
+      buyerName,
+      productTitle,
+      category,
+      description,
+      amount,
+      pickupDate,
+      pickupTime,
+      pickupLocation
+    } = options.data;
 
-  const pickupDateFormatted = pickupDate
-    ? new Date(pickupDate).toLocaleDateString()
-    : "";
+    const pickupDateFormatted = pickupDate
+      ? new Date(pickupDate).toLocaleDateString()
+      : "";
 
-  htmlContent = `
-  <html>
-    <body style="font-family: Arial;">
-      <h2 style="color:#2ECC71;">Purchase Request Accepted</h2>
+    htmlContent = `
+    <html>
+      <body style="font-family: Arial;">
+        <h2 style="color:#2ECC71;">Purchase Request Accepted</h2>
 
-      <p>Hi <strong>${buyerName}</strong>,</p>
-      <p>Good news! Your purchase request has been <strong>accepted</strong> by the seller.</p>
+        <p>Hi <strong>${buyerName}</strong>,</p>
+        <p>Good news! Your purchase request has been <strong>accepted</strong> by the seller.</p>
 
-      <table border="1" cellpadding="8" style="border-collapse: collapse;">
-        <tr>
-          <td><strong>Product</strong></td>
-          <td>${productTitle}</td>
-        </tr>
-        ${category ? `
-        <tr>
-          <td><strong>Category</strong></td>
-          <td>${category}</td>
-        </tr>` : ''}
-        ${description ? `
-        <tr>
-          <td><strong>Description</strong></td>
-          <td>${description}</td>
-        </tr>` : ''}
-        <tr>
-          <td><strong>Amount</strong></td>
-          <td>₹${amount}</td>
-        </tr>
-      </table>
+        <table border="1" cellpadding="8" style="border-collapse: collapse;">
+          <tr>
+            <td><strong>Product</strong></td>
+            <td>${productTitle}</td>
+          </tr>
+          ${category ? `
+          <tr>
+            <td><strong>Category</strong></td>
+            <td>${category}</td>
+          </tr>` : ''}
+          ${description ? `
+          <tr>
+            <td><strong>Description</strong></td>
+            <td>${description}</td>
+          </tr>` : ''}
+          <tr>
+            <td><strong>Amount</strong></td>
+            <td>₹${amount}</td>
+          </tr>
+        </table>
 
-      <h3 style="margin-top:16px;">Pickup Details</h3>
-      <table border="1" cellpadding="8" style="border-collapse: collapse;">
-        <tr>
-          <td><strong>Date</strong></td>
-          <td>${pickupDateFormatted || "-"}</td>
-        </tr>
-        <tr>
-          <td><strong>Time</strong></td>
-          <td>${pickupTime || "-"}</td>
-        </tr>
-        <tr>
-          <td><strong>Location</strong></td>
-          <td>${pickupLocation || "-"}</td>
-        </tr>
-      </table>
+        <h3 style="margin-top:16px;">Pickup Details</h3>
+        <table border="1" cellpadding="8" style="border-collapse: collapse;">
+          <tr>
+            <td><strong>Date</strong></td>
+            <td>${pickupDateFormatted || "-"}</td>
+          </tr>
+          <tr>
+            <td><strong>Time</strong></td>
+            <td>${pickupTime || "-"}</td>
+          </tr>
+          <tr>
+            <td><strong>Location</strong></td>
+            <td>${pickupLocation || "-"}</td>
+          </tr>
+        </table>
 
-      <p style="margin-top:14px;">Please be on time and carry the required amount.</p>
-      <p>Regards,<br>CampusCart Team</p>
-    </body>
-  </html>
-  `;
+        <p style="margin-top:14px;">Please be on time and carry the required amount.</p>
+        <p>Regards,<br>CampusCart Team</p>
+      </body>
+    </html>
+    `;
 
-  plainText = `
-  Purchase Request Accepted
+    plainText = `
+    Purchase Request Accepted
 
-  Hi ${buyerName},
+    Hi ${buyerName},
 
-  Your request has been accepted for:
-  Product: ${productTitle}
-  ${category ? `Category: ${category}` : ''}
-  ${description ? `Description: ${description}` : ''}
-  Amount: ₹${amount}
+    Your request has been accepted for:
+    Product: ${productTitle}
+    ${category ? `Category: ${category}` : ''}
+    ${description ? `Description: ${description}` : ''}
+    Amount: ₹${amount}
 
-  Pickup details:
-  Date: ${pickupDateFormatted || "-"}
-  Time: ${pickupTime || "-"}
-  Location: ${pickupLocation || "-"}
+    Pickup details:
+    Date: ${pickupDateFormatted || "-"}
+    Time: ${pickupTime || "-"}
+    Location: ${pickupLocation || "-"}
 
-  Regards,
-  CampusCart Team
-  `;
-}
+    Regards,
+    CampusCart Team
+    `;
+  }
+
+  // Get transporter (lazy init)
+  const mailer = getTransporter();
+  if (!mailer) {
+    console.error('❌ [Email] Cannot send — transporter not available (check EMAIL_USER/EMAIL_PASS)');
+    return;
+  }
 
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    const info = await mailer.sendMail({
+      from: `"CampusCart" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text: plainText,
       html: htmlContent
     });
-    console.log(`Email sent to ${to}`);
+    console.log(`✅ [Email] Sent to ${to} | Subject: "${subject}" | MessageId: ${info.messageId}`);
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error(`❌ [Email] FAILED to ${to} | Subject: "${subject}"`);
+    console.error('   Error:', error.message);
+    if (error.code) console.error('   Code:', error.code);
+    if (error.responseCode) console.error('   SMTP Response Code:', error.responseCode);
+    // Reset transporter on auth errors so it retries fresh next time
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+      console.error('   ⚠️  Resetting transporter due to auth failure');
+      transporter = null;
+    }
   }
 };
 

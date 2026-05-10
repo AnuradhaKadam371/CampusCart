@@ -106,6 +106,13 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 
+  // 📧 Email config diagnostic (visible in Render logs)
+  console.log(`📧 EMAIL_USER: ${process.env.EMAIL_USER ? process.env.EMAIL_USER : '❌ NOT SET'}`);
+  console.log(`📧 EMAIL_PASS: ${process.env.EMAIL_PASS ? '✅ SET' : '❌ NOT SET'}`);
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('⚠️  Email will NOT work — set EMAIL_USER and EMAIL_PASS in Render Environment Variables!');
+  }
+
   // ✅ Keep-alive ping: prevents Render free tier from sleeping
   // Pings itself every 14 minutes (Render sleeps after 15 min idle)
   if (process.env.RENDER_EXTERNAL_URL) {

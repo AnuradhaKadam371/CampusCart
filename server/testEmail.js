@@ -1,24 +1,34 @@
 require('dotenv').config();
 
-console.log("ENV CHECK:", process.env.EMAIL_USER, process.env.EMAIL_PASS); // ✅ load .env
+console.log('=== CampusCart Email Test ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER || 'NOT SET ❌');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '***SET*** ✅' : 'NOT SET ❌');
+console.log('');
+
 const sendEmail = require('./utils/sendEmail');
 
 async function test() {
+  console.log('Sending test email to:', process.env.EMAIL_USER);
+  console.log('');
+
   try {
-    await sendEmail('anuradhakadam371@gmail.com', 'CampusCart Test Email', {
-      type: 'accepted',
+    // Test 1: Purchase request email
+    await sendEmail(process.env.EMAIL_USER, 'CampusCart Test - Purchase Request', {
+      type: 'request',
       data: {
+        sellerName: 'Test Seller',
         buyerName: 'Test Buyer',
-        productTitle: 'Test Product',
-        amount: 1500,
-        pickupDate: '2026-03-20',
-        pickupTime: '14:00',
-        pickupLocation: 'Library Gate'
+        productTitle: 'Engineering Mathematics Book',
+        category: 'Books',
+        description: '3rd semester textbook, good condition',
+        amount: 250,
       }
     });
-    console.log('Test email sent successfully!');
+    console.log('');
+    console.log('🎉 Test completed! Check your inbox at', process.env.EMAIL_USER);
   } catch (err) {
-    console.error('Error sending test email:', err.message);
+    console.error('');
+    console.error('💥 Test failed:', err.message);
   }
 }
 
