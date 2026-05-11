@@ -7,21 +7,59 @@ const axios = require('axios');
 // 2. Gmail SMTP fallback (works locally)
 // ============================================================
 
+function getEmailUser() {
+  return process.env.EMAIL_USER || process.env.EMAIL || '';
+}
+
+function getEmailPass() {
+  return (
+    process.env.EMAIL_PASS ||
+    process.env.EMAIL_PASSWORD ||
+    process.env.EMAIL_APP_PASSWORD ||
+    ''
+  );
+}
+
+function getBrevoApiKey() {
+  return (
+    process.env.BREVO_API_KEY ||
+    process.env.SENDINBLUE_API_KEY ||
+    process.env.BREVO_KEY ||
+    ''
+  );
+}
+
+function getBrevoSenderEmail() {
+  return (
+    process.env.BREVO_SENDER_EMAIL ||
+    process.env.EMAIL_FROM ||
+    process.env.MAIL_FROM ||
+    getEmailUser() ||
+    ''
+  );
+}
+
 // ---------- METHOD 1: BREVO HTTP API (for Render) ----------
 async function sendViaBrevo(to, subject, htmlContent, plainText) {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = getBrevoApiKey();
   if (!apiKey) return false;
 
   try {
+    const senderEmail = getBrevoSenderEmail();
+    if (!senderEmail) {
+      console.error('❌ [Brevo] Sender email not configured (set BREVO_SENDER_EMAIL or EMAIL_USER/EMAIL)');
+      return false;
+    }
+
     console.log('📧 [Brevo] Sending email to:', to);
-    console.log('📧 [Brevo] API Key starts with:', apiKey.substring(0, 15) + '...');
-    console.log('📧 [Brevo] Sender:', process.env.EMAIL_USER || 'support.campuscart@gmail.com');
+    console.log('📧 [Brevo] API Key starts with:', apiKey.slice(0, 15) + '...');
+    console.log('📧 [Brevo] Sender:', senderEmail);
     const response = await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
         sender: {
           name: 'CampusCart',
-          email: process.env.EMAIL_USER || 'support.campuscart@gmail.com',
+          email: senderEmail,
         },
         to: [{ email: to }],
         subject: subject,
@@ -51,11 +89,11 @@ async function sendViaBrevo(to, subject, htmlContent, plainText) {
 let transporter = null;
 
 async function sendViaGmail(to, subject, htmlContent, plainText) {
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+  const user = getEmailUser();
+  const pass = getEmailPass();
 
   if (!user || !pass) {
-    console.error('❌ [Gmail] EMAIL_USER or EMAIL_PASS not set!');
+    console.error('❌ [Gmail] Email user/pass not set (expected EMAIL_USER/EMAIL and EMAIL_PASS)');
     return false;
   }
 
@@ -207,7 +245,7 @@ const sendEmail = async (to, subject, options) => {
   }
 
   // Try Brevo HTTP API first (works on Render — no SMTP needed)
-  if (process.env.BREVO_API_KEY) {
+  if (getBrevoApiKey()) {
     const brevoSuccess = await sendViaBrevo(to, subject, htmlContent, plainText);
     if (brevoSuccess) return;
     console.log('⚠️  [Email] Brevo failed, trying Gmail SMTP...');
